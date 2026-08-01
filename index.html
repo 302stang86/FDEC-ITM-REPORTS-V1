@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FDEC ITM">
+<meta name="theme-color" content="#1F3864">
+<title>FDEC Fire Sprinkler ITM Reports</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&display=swap');
+:root{
+  --navy:#1F3864; --navy2:#2b4a80; --red:#B11116; --red2:#8f0e12;
+  --ink:#1a1a1a; --muted:#5c6470; --line:#c9ccd1; --line2:#e4e7ea;
+  --bg:#eef1f4; --card:#ffffff; --ok:#1c7a3f; --warn:#B8860B;
+  --shade:#f4f6f8; --pink:#f7e9ea;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Segoe UI",Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg);font-size:14px;line-height:1.35}
+button{font-family:inherit}
+.hidden{display:none!important}
+
+/* ---------- Auth ---------- */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:linear-gradient(160deg,#1F3864,#12213c)}
+.auth{background:#fff;border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.35);width:100%;max-width:420px;padding:30px 28px}
+.auth .brandbar{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.auth .flame{width:34px;height:34px;border-radius:8px;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+.auth h1{font-size:18px;margin:0;color:var(--navy)}
+.auth .sub{color:var(--muted);font-size:12px;margin:2px 0 20px}
+.auth label{display:block;font-size:12px;font-weight:600;color:var(--navy);margin:12px 0 4px}
+.auth input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px}
+.auth input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(31,56,100,.15)}
+.auth .btn{width:100%;margin-top:18px;background:var(--red);color:#fff;border:none;padding:12px;border-radius:8px;
+  font-size:15px;font-weight:700;cursor:pointer}
+.auth .btn:hover{background:var(--red2)}
+.auth .swap{margin-top:14px;text-align:center;font-size:13px;color:var(--muted)}
+.auth .swap a{color:var(--navy);font-weight:600;cursor:pointer;text-decoration:underline}
+.auth .err{color:var(--red);font-size:12.5px;margin-top:10px;min-height:16px}
+.auth .row2{display:flex;gap:10px}
+.auth .row2>div{flex:1}
+.auth .stay{display:flex;align-items:center;gap:7px;margin-top:14px;font-size:12.5px;color:var(--muted)}
+.auth .stay input{width:auto}
+
+/* ---------- App shell ---------- */
+.topbar{background:var(--navy);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.topbar .brand{font-weight:800;letter-spacing:.3px;font-size:15px}
+.topbar .brand small{display:block;font-weight:400;font-size:11px;opacity:.8}
+.topbar .right{display:flex;align-items:center;gap:10px;font-size:13px}
+.topbar .who{opacity:.9}
+.topbar .badge{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.45);border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700}
+.topbar button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.4);
+  padding:6px 12px;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:600}
+.topbar button:hover{background:rgba(255,255,255,.26)}
+
+.tabs{background:#fff;border-bottom:1px solid var(--line);display:flex;gap:0;position:sticky;top:44px;z-index:40;overflow-x:auto}
+.tabs button{background:none;border:none;border-bottom:3px solid transparent;padding:12px 18px;cursor:pointer;
+  font-size:13.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+.tabs button.active{color:var(--navy);border-bottom-color:var(--red)}
+.tabs button:hover{color:var(--navy)}
+
+.toolbar{background:#fbfcfd;border-bottom:1px solid var(--line2);padding:10px 16px;display:flex;gap:8px;
+  align-items:center;flex-wrap:wrap;position:sticky;top:89px;z-index:35}
+.toolbar .grow{flex:1}
+.toolbar button{background:#fff;border:1px solid var(--line);padding:8px 14px;border-radius:7px;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--ink)}
+.toolbar button:hover{border-color:var(--navy);color:var(--navy)}
+.toolbar button.primary{background:var(--red);border-color:var(--red);color:#fff}
+.toolbar button.primary:hover{background:var(--red2)}
+.toolbar .saveflag{font-size:12px;color:var(--ok);font-weight:600;opacity:0;transition:opacity .2s}
+.toolbar .saveflag.show{opacity:1}
+.toolbar .lockpill{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:11px;background:#eef2f8;color:var(--navy);border:1px solid #d3ddee}
+.toolbar .lockpill.admin{background:#eaf7ee;color:var(--ok);border-color:#bfe4cb}
+
+/* ---------- Form paper ---------- */
+.paper-wrap{padding:18px;display:flex;justify-content:center}
+.paper{background:#fff;width:100%;max-width:850px;border:1px solid var(--line);border-radius:6px;
+  box-shadow:0 2px 10px rgba(0,0,0,.08);padding:26px 30px 34px}
+.form-head{text-align:center;border-bottom:2px solid var(--navy);padding-bottom:12px;margin-bottom:6px}
+.form-head .co{color:var(--navy);font-weight:800;font-size:18px}
+.form-head .emerg{float:right;color:var(--red);font-weight:700;font-size:11px;margin-top:3px}
+.form-head .addr,.form-head .contact{font-size:11px;color:var(--muted)}
+.form-head .rtitle{margin-top:10px;font-weight:700;color:var(--red);font-size:14px}
+.form-head .rcode{font-size:11px;color:var(--muted);letter-spacing:.5px}
+
+/* header grid (job/riser/number/date) */
+.hgrid{display:grid;grid-template-columns:2.2fr 1.3fr 1fr 1fr;gap:0;border:1px solid var(--navy);margin:14px 0 4px}
+.hgrid .hcell{border-right:1px solid var(--line);padding:5px 8px}
+.hgrid .hcell:last-child{border-right:none}
+.hgrid .hlab{font-size:10.5px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.3px}
+.hgrid .hlab.longlab{text-transform:none;letter-spacing:0;font-weight:600;font-size:10px;line-height:1.3}
+.hgrid2{display:grid;grid-template-columns:2.2fr 1.3fr 1fr 1fr;border:1px solid var(--navy);border-top:none;margin-bottom:14px}
+.hgrid2 .hcell{border-right:1px solid var(--line);padding:5px 8px}
+.hgrid2 .hcell:last-child{border-right:none}
+.greencell{background:#e9f6ec}
+.jobblock{display:flex;flex-direction:column;gap:5px;margin-top:2px}
+.jobblock input{width:100%}
+.hgrid-zones{grid-template-columns:2.6fr 1fr 1fr}
+.hgrid-zones textarea.fin{min-height:60px;margin-top:2px}
+
+/* FD-25 header: left job | middle paragraph | right 2x2 */
+.fdc-header{display:grid;grid-template-columns:1.5fr 2.2fr 1.6fr;border:1px solid var(--navy);margin:14px 0}
+.fdc-header .hlab{text-transform:uppercase}
+.fdc-header .hlab.longlab{text-transform:none}
+.fdc-header .fdc-left{border-right:1px solid var(--navy);padding:5px 8px;display:flex;flex-direction:column}
+.fdc-header .fdc-mid{border-right:1px solid var(--navy);padding:5px 8px}
+.fdc-header .fdc-tallinput{margin-top:6px;flex:1}
+.fdc-header .fdc-right{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr}
+.fdc-header .fdc-rcell{border-left:1px solid var(--line);border-bottom:1px solid var(--line);padding:5px 8px}
+.fdc-header .fdc-right .fdc-rcell:nth-child(2){border-left:none}
+.fdc-header .fdc-right .fdc-rcell:nth-child(4){border-left:none}
+.fdc-header .fdc-right .fdc-rcell:nth-child(3),
+.fdc-header .fdc-right .fdc-rcell:nth-child(4){border-bottom:none}
+
+/* section */
+.section{margin-top:16px}
+.sec-title{background:var(--navy);color:#fff;font-weight:700;font-size:13px;padding:6px 12px;border-radius:4px 4px 0 0}
+.items{border:1px solid var(--line);border-top:none}
+.item{display:grid;grid-template-columns:34px 1fr auto;gap:0;border-bottom:1px solid var(--line2);align-items:stretch}
+.item:last-child{border-bottom:none}
+.item:nth-child(even){background:var(--shade)}
+.item .num{background:#eef2f8;color:var(--navy);font-weight:700;display:flex;align-items:center;justify-content:center;
+  border-right:1px solid var(--line2);font-size:12.5px}
+.item .txt{padding:8px 10px;font-size:12.5px}
+.item .ctrl{padding:7px 10px;display:flex;align-items:center;gap:10px;justify-content:flex-end;min-width:150px}
+
+/* checkbox that marks X */
+.xbox{width:22px;height:22px;border:1.6px solid var(--navy);border-radius:3px;background:#fff;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;font-weight:800;color:var(--navy);font-size:15px;
+  line-height:1;user-select:none;flex:none}
+.xbox:hover{background:#eef2f8}
+.xbox.on{background:#fff}
+.xbox.on::after{content:"X"}
+.cbwrap{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.cbwrap .lab{font-weight:600}
+
+/* inputs */
+.fin{border:none;border-bottom:1.4px solid var(--navy);background:transparent;font-size:12.5px;padding:2px 4px;
+  min-width:60px;font-family:inherit;color:var(--ink)}
+.fin:focus{outline:none;background:#fffde9}
+.fin.wide{min-width:150px}
+.fin.grow{width:100%}
+textarea.fin{border:1px solid var(--line);border-radius:5px;width:100%;min-height:44px;resize:vertical}
+.fieldrow{display:flex;gap:12px;flex-wrap:wrap;align-items:baseline;padding:8px 10px;font-size:12px}
+.fieldrow .fl{display:flex;gap:5px;align-items:baseline}
+.fieldrow .fl .k{font-weight:600;color:var(--navy)}
+
+/* compliance + deficiency */
+.compliance{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-top:none}
+.compliance .cc{padding:7px 10px;font-size:11.5px;display:flex;align-items:center;gap:8px;background:#e9f6ec}
+.compliance .cc.exc{background:var(--pink)}
+.deficiency{border:1px solid var(--line);border-top:none;padding:8px 10px}
+.deficiency .dhead{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.defrow{display:grid;grid-template-columns:1fr 150px;gap:8px;margin-bottom:6px}
+.defrow select{border:1px solid var(--line);border-radius:5px;padding:5px;font-size:12px}
+.defadd{background:#fff;border:1px dashed var(--line);color:var(--navy);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+
+/* grid form (FD-24) */
+.gridform{border:1px solid var(--line);border-top:none}
+.gridform .ghead{display:grid;grid-template-columns:34px 1fr 42px 42px 42px 1.4fr;background:#eef2f8;font-size:11px;font-weight:700;color:var(--navy)}
+.gridform .ghead div{padding:6px 4px;text-align:center;border-right:1px solid var(--line2)}
+.gridform .ghead div:nth-child(2){text-align:left}
+.gridform .grow{display:grid;grid-template-columns:34px 1fr 42px 42px 42px 1.4fr;border-top:1px solid var(--line2);align-items:stretch}
+.gridform .grow:nth-child(even){background:var(--shade)}
+.gridform .grow .num{background:#eef2f8;color:var(--navy);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:12px}
+.gridform .grow .gtxt{padding:7px 9px;font-size:12px}
+.gridform .grow .gx{display:flex;align-items:center;justify-content:center;border-left:1px solid var(--line2)}
+.gridform .grow .gcmt{border-left:1px solid var(--line2);padding:4px}
+.gridform .grow .gcmt input{border:none;width:100%;font-size:12px;background:transparent}
+.gridform .grow .gcmt input:focus{outline:none;background:#fffde9}
+
+/* pass + signatures */
+.passbar{margin-top:16px;border:1px solid var(--navy);border-radius:5px;padding:10px 12px;display:flex;
+  align-items:center;gap:16px;background:#f8fafc;font-weight:700;color:var(--navy);font-size:13px;flex-wrap:wrap}
+.sig{display:grid;grid-template-columns:1fr 1fr 130px;gap:16px;margin-top:18px}
+.sig .sfield .sline{border-bottom:1.4px solid var(--ink);height:26px}
+.sig .sfield .slab{font-size:10.5px;color:var(--muted);margin-top:3px}
+.sig .sfield input{border:none;border-bottom:1.4px solid var(--ink);width:100%;font-size:13px;padding:3px 2px;background:transparent}
+.sig .sfield input:focus{outline:none;background:#fffde9}
+.sig .sfield input.cursive{font-family:'Dancing Script','Segoe Script','Brush Script MT',cursive;
+  font-size:22px;font-weight:600;color:#12213c;padding-bottom:0}
+
+/* disclaimer */
+.disc{margin-top:18px;border-top:1px solid var(--line);padding-top:10px}
+.disc p{font-size:10px;color:#555;line-height:1.4;margin:0 0 6px}
+
+.locknote{font-size:11px;color:var(--muted);font-style:italic;padding:6px 2px}
+.calcout{font-weight:800;font-size:15px;min-width:70px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.calcout.ok{color:var(--ok)}
+.calcout.over{color:#e11900}
+.riser-btns{margin-left:4px}
+.riser-label{font-weight:700;color:var(--navy);min-width:64px;max-width:100px;border-bottom:1px dashed var(--navy)}
+.riser-label:focus{background:#fffde9;border-bottom-style:solid}
+.riser-pair{border:1.4px solid var(--navy);border-radius:10px;padding:6px 10px;margin:3px 6px 3px 0;align-items:baseline;gap:4px}
+.admin-editable{background:#fffbe6;outline:1px dashed var(--warn)}
+
+footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal{background:#fff;border-radius:12px;max-width:440px;width:100%;padding:22px 24px;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.modal h3{margin:0 0 4px;color:var(--navy)}
+.modal p{font-size:13px;color:var(--muted);margin:0 0 14px}
+.modal input{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:15px}
+.modal .mbtns{display:flex;gap:10px;margin-top:16px}
+.modal .mbtns button{flex:1;padding:11px;border-radius:8px;border:1px solid var(--line);background:#fff;font-weight:600;cursor:pointer}
+.modal .mbtns .go{background:var(--navy);color:#fff;border-color:var(--navy)}
+.modal .merr{color:var(--red);font-size:12px;min-height:15px;margin-top:8px}
+
+@media print{
+  .topbar,.tabs,.toolbar,footer,.no-print{display:none!important}
+  .paper-wrap{padding:0}
+  .paper{box-shadow:none;border:none;max-width:none;border-radius:0}
+  .form.print-hide{display:none!important}
+  body{background:#fff}
+  .item:nth-child(even),.gridform .grow:nth-child(even){background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sec-title{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .section{break-inside:avoid}
+}
+@media(max-width:640px){
+  .hgrid,.hgrid2{grid-template-columns:1fr 1fr}
+  .item{grid-template-columns:28px 1fr}
+  .item .ctrl{grid-column:1/-1;justify-content:flex-start;border-top:1px dashed var(--line2)}
+  .compliance{grid-template-columns:1fr}
+  .sig{grid-template-columns:1fr}
+  .gridform .ghead,.gridform .grow{grid-template-columns:26px 1fr 34px 34px 34px}
+  .gridform .ghead div:last-child,.gridform .grow .gcmt{display:none}
+}
+
+</style>
+</head>
+<body>
+<!-- ===================== AUTH ===================== -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth">
+    <div class="brandbar">
+      <div class="flame">FD</div>
+      <div><h1>FDEC ITM Reports</h1></div>
+    </div>
+    <div class="sub">Fire Sprinkler Inspection, Testing &amp; Maintenance</div>
+
+    <!-- login -->
+    <div id="loginBox">
+      <label>Username</label>
+      <input id="loginUser" autocomplete="username" placeholder="Username">
+      <label>Password</label>
+      <input id="loginPass" type="password" autocomplete="current-password" placeholder="Password">
+      <label class="stay"><input type="checkbox" id="stayLogged" checked> Keep me signed in on this device</label>
+      <button class="btn" id="loginBtn">Sign In</button>
+      <div class="err" id="loginErr"></div>
+      <div class="swap">No account? <a id="toRegister">Register</a></div>
+    </div>
+
+    <!-- register -->
+    <div id="registerBox" class="hidden">
+      <label>Full name</label>
+      <input id="regDisplay" placeholder="First Last">
+      <label>Username</label>
+      <input id="regUser" autocomplete="username" placeholder="Choose a username">
+      <div class="row2">
+        <div>
+          <label>Password</label>
+          <input id="regPass" type="password" autocomplete="new-password" placeholder="Password">
+        </div>
+        <div>
+          <label>Confirm</label>
+          <input id="regPass2" type="password" autocomplete="new-password" placeholder="Re-enter">
+        </div>
+      </div>
+      <button class="btn" id="regBtn">Create Account</button>
+      <div class="err" id="regErr"></div>
+      <div class="swap">Already registered? <a id="toLogin">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="appScreen" class="hidden">
+  <div class="topbar">
+    <div class="brand">FIRE DEFENSE EQUIPMENT CO., INC.<small>Fire Sprinkler ITM Reports</small></div>
+    <div class="right">
+      <span class="who" id="whoami"></span>
+      <button id="logoutBtn">Log Out</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="toolbar">
+    <span class="lockpill" id="lockPill">🔒 Locked fields protected</span>
+    <button id="adminToggle">Admin: Unlock Fields</button>
+    <span class="grow"></span>
+    <span class="saveflag" id="saveFlag">✓ Saved</span>
+    <button id="saveDraftBtn">Save Draft</button>
+    <button id="loadDraftBtn">Load Draft</button>
+    <button id="newDraftBtn">Clear Form</button>
+    <button class="primary" id="pdfBtn">Save as PDF</button>
+  </div>
+
+  <div class="paper-wrap">
+    <div id="formHost"></div>
+  </div>
+
+  <footer>
+    Fire Defense Equipment Co., Inc. · 4350 Delemere Blvd, Royal Oak MI 48073 · NFPA 25 ITM Reports<br>
+    Prepared by Mitchell Peebles · July 29, 2026
+  </footer>
+</div>
+
+<!-- password modal (admin unlock / load draft picker host) -->
+<div id="modalHost"></div>
+
+<script>
+/* ============================================================================
+   FDEC ITM Report forms — data model
+   Reconstructed from Copy_of_2026_Fire_Sprinkler_ITM_Reports workbook.
+   Field types:
+     text    — free text input (single line)
+     area    — multi-line textarea
+     num     — number-ish text (kept as text to allow psi ranges etc.)
+     check   — single click-to-X box
+     compliance — the paired "Compliant / Compliant except as listed" row
+     yn      — Yes/No pair of X-boxes
+   Every editable field has an id; locked/label content is admin-editable only.
+============================================================================ */
+const COMPANY = {
+  name: "Fire Defense Equipment Co., Inc.",
+  addr: "4350 Delemere Boulevard, Royal Oak MI 48073-1807",
+  contact: "Phone: 248/549-8113 · Fax: 248/549-6260 · Email: firedefense@firedefense.com",
+  emergency: "24 HOUR EMERGENCY SERVICE"
+};
+
+/* Reusable boilerplate blocks */
+const DISCLAIMER = [
+  "The customer understands and agrees that the inspection of the above system only indicates the condition of the system at the time the service was performed. Fire Defense Equipment Co. does not guarantee or imply that the fire protection system will detect, suppress or extinguish a fire, nor does Fire Defense imply that the system was or continues to be properly designed & installed. The customer assumes all risks of loss to the customer's premises and contents as a result of a false activation, failure of the system to control, suppress or extinguish the fire and from damages resulting from the release of the water or extinguishing agent.",
+  "This form was created by Fire Defense Equipment Co. to provide a checklist of items required for the annual inspection of a wet pipe fire sprinkler system. Fire Defense provides additional services that are not necessarily required for an annual inspection, but would be required for annual maintenance. Unless indicated elsewhere, Fire Defense is not providing services that are required for weekly, monthly, quarterly, or semi-annually inspection/testing. Copies of these requirements and proposals for these services will be provided upon written request from the customer.",
+  "It is the building owner or owner's designated representatives' responsibility to ensure that all areas of the building containing water-filled piping, for the fire sprinkler system, are maintained at a minimum temperature of 40°F and not exposed to freezing conditions. Failure to do so may result in damage caused by burst pipes or by a fire not being suppressed due to partial or complete ice blockage in the pipe. FDEC recommends, as a minimum precaution, to monitor all areas susceptible to temperatures below 40° F due to cold air infiltration or any other factor with a listed temperature monitoring device connected to either a bell at a continuously attended area or listed monitoring company.",
+  "The building owner is responsible for performing weekly & monthly inspections as per NFPA 25.",
+  "NFPA 25 & 72 require Quarterly & Semi-annual inspections & testing in addition to this inspection. FDEC will provide a quote and perform these inspections when requested by the customer.",
+  "It is the sole responsibility of the owner to have the fire protection equipment reviewed for the proper design should any modifications or changes be made that may affect the operation or design criteria. This would include, but not be limited to, changes in occupancy, building modifications, processes, material changes, material storage heights etc.",
+  "The customer is also notified by this form that they are solely responsible for repairing all deficiencies noted on this inspection form or items that fail after this inspection. Fire Defense will be pleased to quote & complete these repairs when requested in writing. The customer is responsible to maintain a copy of this report on file for the authority having jurisdiction when requested."
+];
+
+/* ---------------------------------------------------------------- FD-17 */
+const FD17 = {
+  id: "fd17",
+  code: "FD-17",
+  title: "Annual Fire Sprinkler System Inspection, Testing and Maintenance Report",
+  header: { risersLabel: "This Report is for Riser(s)" },
+  sections: [
+    { name: "Pre-Inspection", items: [
+      {n:1, text:"Is the fire suppression system monitored by a central monitoring station?", type:"yn"},
+      {n:2, text:"The Fire alarm panel is in normal status and the Fire suppression system is in service upon arrival", type:"check"},
+      {n:3, text:"Local Dispatch and/or Monitoring company notified of system testing:", type:"check"},
+      {n:4, text:"All pertinent parties notified before testing", type:"check"},
+      {n:5, text:"Fire Dispatch:", type:"fields", fields:[
+        {id:"fd17_firedispatch", label:"Fire Dispatch", w:"wide"},
+        {id:"fd17_firedispatch_phone", label:"Phone"},
+        {id:"fd17_firedispatch_id", label:"Name or Badge ID #"}]},
+      {n:6, text:"Monitoring company:", type:"fields", fields:[
+        {id:"fd17_moncompany", label:"Monitoring company", w:"wide"},
+        {id:"fd17_moncompany_phone", label:"Phone"},
+        {id:"fd17_moncompany_id", label:"Name or Badge ID #"}]}
+    ], compliance:"c_1_6", deficiency:"d_1_6", note:"1) FDEC recommends all water flow and supervisory devices to be monitored, per IBC 901.6, 903.4"},
+
+    { name: "System Identifications", items: [
+      {n:7, text:"Hydraulic nameplates attached and legible", type:"check"},
+      {n:8, text:"Any additional system locations are properly identified at the riser; e.g. Dry, Antifreeze, Pre-Action, Deluge or Any other systems", type:"check"},
+      {n:9, text:"All known Control valves, Sectional valves, Main drains, Auxiliary drains, ITVs, Drum drips or low points properly identified and accessible.", type:"check"},
+      {n:10, text:"FDC is properly identified and visible", type:"check"}
+    ], compliance:"c_7_10", deficiency:"d_7_10"},
+
+    { name: "Additional NFPA Required Inspections", items: [
+      {n:11, text:"Fire Alarm system Inspected within the past year.", type:"check_dates", dateId:"fd17_i11_date", byId:"fd17_i11_by"},
+      {n:12, text:"Fire pump(s) inspected and tagged within the past year.", type:"check_dates", dateId:"fd17_i12_date", byId:"fd17_i12_by"},
+      {n:13, text:"5 Year internal pipe inspection.", type:"check_dates", dateId:"fd17_i13_date", byId:"fd17_i13_by"},
+      {n:14, text:"5 Year FDC piping hydrostatic testing", type:"check_dates", dateId:"fd17_i14_date", byId:"fd17_i14_by"},
+      {n:15, text:"Standpipe system(s) inspected within the past year.", type:"check_dates", dateId:"fd17_i15_date", byId:"fd17_i15_by"},
+      {n:16, text:"System Backflow device inspected within the past 3 years.", type:"check_dates", dateId:"fd17_i16_date", byId:"fd17_i16_by"}
+    ], compliance:"c_11_16", deficiency:"d_11_16"},
+
+    { name: "System Functionality", items: [
+      {n:17, text:"Accessible Control valves and Sectional valves exercised and, if required, lubricated.", type:"check"},
+      {n:18, text:"Tamper switch signals verified within two revolutions at the fire alarm panel or keypad and restored when in normal position. Or valves are properly locked or sealed.", type:"check"},
+      {n:19, text:"Waterflow Switch tested through Inspectors test valve. (ITV)", type:"check"},
+      {n:20, text:"Alarm device(s) above the FDC are working properly", type:"check"},
+      {n:21, text:"FDC inspected for signs of damage, seized fittings and missing caps.", type:"check"},
+      {n:22, text:"FDC lubricated and visible interior piping inspected for foreign material", type:"check"},
+      {n:23, text:"Time for waterflow alarm to activate (seconds):", type:"risers"},
+      {n:24, text:"Building fire alarm devices that activated:", type:"devices"},
+      {n:25, text:"Central monitoring station received the correct signals during testing and verified by:", type:"verifyby"},
+      {n:26, text:"All Water gauges replaced every 5 years", type:"check_gauge"},
+      {n:27, text:"Adequate drainage for main drain testing", type:"check"},
+      {n:28, text:"Beginning Static Pressure (psi):", type:"numfield", fid:"fd17_i28"},
+      {n:29, text:"Residual Pressure (psi):", type:"numfield", fid:"fd17_i29"},
+      {n:30, text:"Return Static Pressure (psi):", type:"numfield", fid:"fd17_i30"},
+      {n:31, text:"Time to return to static Pressure (sec.):", type:"numfield", fid:"fd17_i31"},
+      {n:32, text:"Last Recorded Residual Pressure (psi):", type:"numfield", fid:"fd17_i32"},
+      {n:33, text:"The Residual pressure is less than a 10% reduction from original or last test", type:"residual_calc"}
+    ], compliance:"c_17_33", deficiency:"d_17_33"},
+
+    { name: "System Visual Inspection", items: [
+      {n:34, text:"Visible sprinkler piping appears to be in good condition with no signs of leaks, corrosion, damage or foreign material", type:"check"},
+      {n:35, text:"Visible sprinkler heads appear to be in good condition with no signs of leaks, loading, corrosion, damage or foreign material", type:"check"},
+      {n:36, text:"Visible sprinkler heads appear to be properly oriented and no storage within 18” of the deflector", type:"check"},
+      {n:37, text:"Escutcheon rings and Concealed cover plates are in place with no visible signs of mechanical defect or foreign material effecting the cover plates performance", type:"check"},
+      {n:38, text:"Sprinkler heads subjected to harsh environment for 5 years have been replaced or sample tested", type:"check"},
+      {n:39, text:"Sprinkler heads manufactured prior to 1920 have been replaced", type:"check"},
+      {n:40, text:"Sprinkler heads in service for 75 years have been replaced or sample tested; then retested every 5 years", type:"check"},
+      {n:41, text:"Sprinkler heads in service for 50 years have been replaced or sample tested; then retested every 10 years", type:"check"},
+      {n:42, text:"Fast response element sprinklers in service for 25 years have been replaced or sample tested; then retested every 10 years", type:"check"},
+      {n:43, text:"ESFR and CMSA Fast response element sprinklers in service for 20 years have been replaced or sample tested; then retested every 10 years", type:"check"},
+      {n:44, text:"Dry barrel sprinklers in service for 20 years have been replaced or sample tested; then retested every 10 years", type:"check"},
+      {n:45, text:"Solder-type sprinklers with temperature classification of extra high (325° F) or greater that are exposed to semi continuously or continuous maximum allowable ambient temperature replaced or sample tested every 5 years", type:"check"},
+      {n:46, text:"The installing company left the proper equipment list for the spare head box and the spare head box appears to be properly equipped with sprinkler heads, head wrench(s) and concealed sprinkler head tools.", type:"check"},
+      {n:47, text:"At time of report, Riser Room was above 40° F", type:"check"}
+    ], compliance:"c_34_47", deficiency:"d_34_47"},
+
+    { name: "Post Inspection", items: [
+      {n:48, text:"Fire alarm panel reset and cleared after inspection", type:"check"},
+      {n:49, text:"Sprinkler system returned to full service and pertinent parties notified after inspection", type:"check"}
+    ], compliance:"c_48_49", deficiency:"d_48_49"}
+  ],
+  passLabel: "The WET Riser(s) are free from Critical & Impaired Deficiencies:",
+  disclaimer: DISCLAIMER
+};
+
+/* ---------------------------------------------------------------- FD-24 */
+const FD24 = {
+  id: "fd24",
+  code: "FD-24",
+  title: "5 Year Internal System Inspection",
+  header: { risersLabel: "This Report is for Riser(s)" },
+  grid: true, // uses OK / N/A / NO / Comment columns
+  sections: [
+    { name: "Item(s) Inspected / Tested", grid:true, items: [
+      {n:1, text:"Pertinent parties notified before investigation"},
+      {n:2, text:"System in service prior to investigation"},
+      {n:3, text:"System Impairment Program implemented before conducting internal inspection"},
+      {n:4, text:"Flushing connection of one main and sprinkler of one branch line removed"},
+      {n:5, text:"Interior of main, branch line and sprinkler outlet checked for presence of foreign organic or inorganic material that will clog the pipe or sprinkler head."},
+      {n:6, text:"No significant foreign material observed"},
+      {n:7, text:"Complete flushing program implemented where observed material sufficient to obstruct sprinklers.", dateField:true},
+      {n:8, text:"Dry system flushing contained less than 1/4 cup of significant foreign material or pipe scale"},
+      {n:9, text:"Alarm valve, Dry valve, associated strainers and restricted orifices passed internal inspection."},
+      {n:10, text:"Check valves, including FDC check valve, inspected internally and all components operate correctly, move freely and are in good condition."},
+      {n:11, text:"Water & Air pressure gauge(s) replaced.", dateField:true},
+      {n:12, text:"Valve status test performed and readings are acceptable"},
+      {n:13, text:"Control valves in normal open or closed position"},
+      {n:14, text:"Control valves properly sealed, locked or supervised"},
+      {n:15, text:"Fire alarm panel reset and cleared"},
+      {n:16, text:"System(s) fully restored to normal operation"},
+      {n:17, text:"All impairment tags removed"},
+      {n:18, text:"Pertinent parties notified after conclusion of investigation"}
+    ], compliance:"c_1_19", deficiency:"d_1_19"}
+  ],
+  passLabel: "5 Year Internal System Inspection Passed:",
+  disclaimer: [DISCLAIMER[6]]
+};
+
+/* ---------------------------------------------------------------- FD-25 */
+const FD25 = {
+  id: "fd25",
+  code: "FD-25",
+  title: "5 Year Fire Department Connection(s) & Piping Hydrostatic Testing",
+  header: { risersLabel: "Fire Department Connection(s) & piping hydrostatically tested at a minimum of 150 psi for 2 hours. Above & Underground Fire Department Connection piping shall show no visible signs of detrimental leakage, no catastrophic pipe or fitting failures and must satisfactorily maintain pressure for the duration of the test." },
+  fdcHeader: true,
+  sections: [
+    { name: "Inspection & Testing", items: [
+      {n:1, text:"Fire Department Connection Type / Check valve type / Piping size", type:"fdc_row"},
+      {n:2, text:"FDC piping hydrostatically tested at:", type:"hydro_row"},
+      {n:3, text:"Do you certify as the sprinkler contractor that additives and corrosive chemicals, sodium silicate or derivatives of sodium silicate, brine, or other corrosive chemicals were not used for testing systems or stopping leaks?", type:"yn"},
+      {n:4, text:"Valve Status Test performed after FDC hydrostatic testing completed:", type:"yn_why"},
+      {n:5, text:"Sprinkler system restored to full service and all pertinent parties notified after testing:", type:"yn_why"},
+      {n:6, text:"FDC piping and fittings showed no signs of leaks or loss of pressure during the FDC hydrostatic testing:", type:"yn_why"},
+      {n:7, text:"After testing all Blank discs, Blind gaskets and Testing equipment is removed and piping properly reconnected:", type:"yn_why"}
+    ], comments:"fd25_comments"}
+  ],
+  passLabel: "5 Year FDC & Piping Hydrostatic Testing Passed:",
+  disclaimer: DISCLAIMER
+};
+
+const FORMS = [FD17, FD24, FD25];
+
+
+/* ============================================================================
+   FDEC ITM Reports — engine
+============================================================================ */
+const LS = {
+  users:  'fdec_itm_users',
+  session:'fdec_itm_session',
+  drafts: 'fdec_itm_drafts'      // {draftName: {form, values, savedAt, by}}
+};
+const ADMIN_USER = 'mpeebles';
+const ADMIN_PASS = 'Chaosenvy69@';
+
+let CURRENT_USER = null;
+let IS_ADMIN = false;
+let ADMIN_UNLOCKED = false;         // admin actively editing locked/label fields
+let ACTIVE_FORM = FORMS[0].id;
+let VALUES = {};                    // {fieldId: value|bool}  for the active form
+
+/* ---------- tiny crypto (SHA-256 with salt) ---------- */
+async function sha(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function randSalt(){ const a=new Uint8Array(16); crypto.getRandomValues(a);
+  return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+
+/* ---------- user store ---------- */
+function getUsers(){ try{return JSON.parse(localStorage.getItem(LS.users))||{}}catch{return {}} }
+function setUsers(u){ localStorage.setItem(LS.users, JSON.stringify(u)); }
+function getSession(){ try{return JSON.parse(localStorage.getItem(LS.session))}catch{return null} }
+function setSession(s){ if(s) localStorage.setItem(LS.session, JSON.stringify(s)); else localStorage.removeItem(LS.session); }
+
+/* ---------- drafts store ---------- */
+function getDrafts(){ try{return JSON.parse(localStorage.getItem(LS.drafts))||{}}catch{return {}} }
+function setDrafts(d){ localStorage.setItem(LS.drafts, JSON.stringify(d)); }
+
+/* ---------- auth UI ---------- */
+const authScreen=document.getElementById('authScreen');
+const appScreen=document.getElementById('appScreen');
+document.getElementById('toRegister').onclick=()=>{document.getElementById('loginBox').classList.add('hidden');document.getElementById('registerBox').classList.remove('hidden');};
+document.getElementById('toLogin').onclick=()=>{document.getElementById('registerBox').classList.add('hidden');document.getElementById('loginBox').classList.remove('hidden');};
+
+document.getElementById('regBtn').onclick=async ()=>{
+  const disp=document.getElementById('regDisplay').value.trim();
+  const u=document.getElementById('regUser').value.trim().toLowerCase();
+  const p=document.getElementById('regPass').value;
+  const p2=document.getElementById('regPass2').value;
+  const err=document.getElementById('regErr'); err.textContent='';
+  if(!u){err.textContent='Enter a username.';return;}
+  if(u===ADMIN_USER){err.textContent='That username is reserved.';return;}
+  if(p.length<4){err.textContent='Password must be at least 4 characters.';return;}
+  if(p!==p2){err.textContent='Passwords do not match.';return;}
+  const users=getUsers();
+  if(users[u]){err.textContent='That username is taken.';return;}
+  const salt=randSalt();
+  users[u]={salt, hash:await sha(salt+p), display:disp||u};
+  setUsers(users);
+  if(document.getElementById('stayLogged').checked) setSession({username:u});
+  enterApp(u);
+};
+
+document.getElementById('loginBtn').onclick=async ()=>{
+  const u=document.getElementById('loginUser').value.trim().toLowerCase();
+  const p=document.getElementById('loginPass').value;
+  const err=document.getElementById('loginErr'); err.textContent='';
+  if(u===ADMIN_USER){
+    if(p!==ADMIN_PASS){err.textContent='Incorrect admin password.';return;}
+    if(document.getElementById('stayLogged').checked) setSession({username:ADMIN_USER}); else setSession(null);
+    enterApp(ADMIN_USER); return;
+  }
+  const users=getUsers(); const rec=users[u];
+  if(!rec){err.textContent='No account with that username.';return;}
+  const ok=(await sha(rec.salt+p))===rec.hash;
+  if(!ok){err.textContent='Incorrect password.';return;}
+  if(document.getElementById('stayLogged').checked) setSession({username:u}); else setSession(null);
+  enterApp(u);
+};
+
+document.getElementById('logoutBtn').onclick=()=>{
+  setSession(null); CURRENT_USER=null; IS_ADMIN=false; ADMIN_UNLOCKED=false;
+  appScreen.classList.add('hidden'); authScreen.classList.remove('hidden');
+  document.getElementById('loginPass').value='';
+};
+
+function enterApp(user){
+  CURRENT_USER=user;
+  IS_ADMIN=(user===ADMIN_USER);
+  ADMIN_UNLOCKED=false;
+  const users=getUsers();
+  const disp=IS_ADMIN?'Mpeebles':((users[user]&&users[user].display)||user);
+  document.getElementById('whoami').innerHTML = disp + (IS_ADMIN?' <span class="badge">ADMIN</span>':'');
+  document.getElementById('adminToggle').style.display = IS_ADMIN?'':'none';
+  updateLockPill();
+  authScreen.classList.add('hidden');
+  appScreen.classList.remove('hidden');
+  buildTabs();
+  VALUES={};
+  renderForm(ACTIVE_FORM);
+}
+
+function updateLockPill(){
+  const pill=document.getElementById('lockPill');
+  const btn=document.getElementById('adminToggle');
+  if(IS_ADMIN && ADMIN_UNLOCKED){
+    pill.textContent='🔓 Admin editing: locked fields unlocked';
+    pill.className='lockpill admin';
+    btn.textContent='Admin: Re-lock Fields';
+  }else{
+    pill.textContent='🔒 Locked fields protected';
+    pill.className='lockpill';
+    btn.textContent='Admin: Unlock Fields';
+  }
+}
+
+/* ---------- admin unlock ---------- */
+document.getElementById('adminToggle').onclick=()=>{
+  if(!IS_ADMIN) return;
+  if(ADMIN_UNLOCKED){ ADMIN_UNLOCKED=false; updateLockPill(); renderForm(ACTIVE_FORM); return; }
+  // require password re-entry to unlock locked fields
+  passwordModal('Unlock locked fields','Enter the admin password to edit locked labels and protected fields.', (val)=>{
+    if(val!==ADMIN_PASS) return 'Incorrect admin password.';
+    ADMIN_UNLOCKED=true; updateLockPill(); renderForm(ACTIVE_FORM); return null;
+  });
+};
+
+/* ---------- tabs ---------- */
+function buildTabs(){
+  const host=document.getElementById('tabs'); host.innerHTML='';
+  FORMS.forEach(f=>{
+    const b=document.createElement('button');
+    b.textContent=f.code+' — '+shortName(f);
+    b.className=(f.id===ACTIVE_FORM?'active':'');
+    b.onclick=()=>{ if(f.id===ACTIVE_FORM) return;
+      if(dirtyGuard()){ ACTIVE_FORM=f.id; VALUES={}; buildTabs(); renderForm(f.id); } };
+    host.appendChild(b);
+  });
+}
+function shortName(f){ return f.id==='fd17'?'Annual Wet':(f.id==='fd24'?'5-Yr Internal':'FDC Hydro'); }
+let DIRTY=false;
+function dirtyGuard(){
+  if(!DIRTY) return true;
+  return confirm('Switch forms? Unsaved entries on this form will be cleared unless you saved a draft.');
+}
+
+/* ============================================================================
+   FORM RENDERING
+============================================================================ */
+const host=document.getElementById('formHost');
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* value helpers */
+function val(id){ return VALUES[id]!=null?VALUES[id]:''; }
+function setVal(id,v){ VALUES[id]=v; DIRTY=true; }
+
+/* An input the tech can edit. Locked (label) fields are only editable when admin has unlocked. */
+function inputEl(id, opts={}){
+  const i=document.createElement(opts.area?'textarea':'input');
+  i.className='fin'+(opts.cls?(' '+opts.cls):'');
+  if(opts.placeholder) i.placeholder=opts.placeholder;
+  i.value=val(id);
+  i.oninput=()=>{ setVal(id,i.value); if(opts.onchange) opts.onchange(); flash(); };
+  return i;
+}
+
+/* X checkbox */
+function xbox(id){
+  const b=document.createElement('span');
+  b.className='xbox'+(val(id)?' on':'');
+  b.setAttribute('role','checkbox');
+  b.setAttribute('aria-checked', val(id)?'true':'false');
+  b.tabIndex=0;
+  const toggle=()=>{ const nv=!val(id); setVal(id,nv); b.classList.toggle('on',nv); b.setAttribute('aria-checked',nv?'true':'false'); flash(); };
+  b.onclick=toggle;
+  b.onkeydown=(e)=>{ if(e.key===' '||e.key==='Enter'){e.preventDefault();toggle();} };
+  return b;
+}
+function labeledBox(id,label){
+  const w=document.createElement('span'); w.className='cbwrap';
+  w.appendChild(xbox(id));
+  const l=document.createElement('span'); l.className='lab'; l.textContent=label;
+  w.appendChild(l);
+  return w;
+}
+
+function renderForm(fid){
+  const f=FORMS.find(x=>x.id===fid);
+  host.innerHTML='';
+  const paper=document.createElement('div'); paper.className='paper';
+
+  /* header */
+  const head=document.createElement('div'); head.className='form-head';
+  head.innerHTML=`<div class="emerg">${esc(COMPANY.emergency)}</div>
+    <div class="co">${esc(COMPANY.name)}</div>
+    <div class="addr">${esc(COMPANY.addr)}</div>
+    <div class="contact">${esc(COMPANY.contact)}</div>
+    <div class="rtitle">${esc(f.title)}</div>`;
+  paper.appendChild(head);
+
+  /* job header grid */
+  paper.appendChild(headerGrid(f));
+
+  /* sections */
+  if(f.id==='fd24') renderGridForm(f,paper);
+  else if(f.id==='fd25') renderFDC(f,paper);
+  else renderStandard(f,paper);
+
+  /* pass bar */
+  const pass=document.createElement('div'); pass.className='passbar';
+  const pl=document.createElement('span'); pl.textContent=f.passLabel; pass.appendChild(pl);
+  pass.appendChild(labeledBox(f.id+'_pass_yes','Yes'));
+  pass.appendChild(labeledBox(f.id+'_pass_no','No'));
+  paper.appendChild(pass);
+
+  /* signatures — signature line auto-mirrors the printed name in cursive */
+  const sig=document.createElement('div'); sig.className='sig';
+  const techSign=sigField(f.id+'_tech_sign','Technician(s) Signature',{cursive:true});
+  const custSign=sigField(f.id+'_cust_sign','Customer Signature',{cursive:true});
+  sig.appendChild(techSign);
+  sig.appendChild(custSign);
+  sig.appendChild(sigField(f.id+'_date','Date',{dateTarget:true}));
+  paper.appendChild(sig);
+  const sig2=document.createElement('div'); sig2.className='sig';
+  sig2.appendChild(sigField(f.id+'_tech_print','Technician(s) Print',{drives:f.id+'_tech_sign'}));
+  sig2.appendChild(sigField(f.id+'_cust_print','Customer Print',{drives:f.id+'_cust_sign'}));
+  sig2.appendChild(document.createElement('div'));
+  paper.appendChild(sig2);
+
+  /* disclaimer */
+  if(f.disclaimer && f.disclaimer.length){
+    const d=document.createElement('div'); d.className='disc';
+    f.disclaimer.forEach(p=>{ const el=document.createElement('p'); el.textContent=p; d.appendChild(el); });
+    paper.appendChild(d);
+  }
+
+  host.appendChild(paper);
+}
+
+function sigField(id,label,opts={}){
+  const w=document.createElement('div'); w.className='sfield';
+  const i=inputEl(id);
+  if(opts.cursive){
+    i.classList.add('cursive');
+    i.id='siginput_'+id;
+    // Direct typing into a signature stops auto-mirroring from the print field.
+    i.addEventListener('input', ()=>{ VALUES[id+'_auto']=false; });
+  }
+  if(opts.dateTarget){
+    i.id='dateinput_'+id;
+    // Direct typing into the bottom date stops auto-mirroring from the header date.
+    i.addEventListener('input', ()=>{ VALUES[id+'_auto']=false; });
+  }
+  // A PRINT field that drives a signature field.
+  if(opts.drives){
+    i.addEventListener('input', ()=>{
+      const target=opts.drives;
+      const sigEl=document.getElementById('siginput_'+target);
+      const alreadyManual = VALUES[target+'_auto']===false && val(target);
+      if(sigEl && !alreadyManual){
+        sigEl.value=i.value;
+        setVal(target, i.value);
+        VALUES[target+'_auto']=true;   // mark as auto-filled
+      }
+    });
+  }
+  w.appendChild(i);
+  const l=document.createElement('div'); l.className='slab'; l.textContent=label; w.appendChild(l);
+  return w;
+}
+
+function headerGrid(f){
+  if(f.id==='fd25') return headerGridFDC(f);
+  const wrap=document.createElement('div');
+  const g=document.createElement('div'); g.className='hgrid';
+  const labels=['Job Name & Location', f.header.risersLabel, 'Job Number', 'Date'];
+  labels.forEach(l=>{ const c=document.createElement('div'); c.className='hcell';
+    const cls='hlab'+(String(l).length>40?' longlab':'');
+    c.innerHTML=`<div class="${cls}">${esc(l)}</div>`; g.appendChild(c); });
+  wrap.appendChild(g);
+  const g2=document.createElement('div'); g2.className='hgrid2';
+  [[f.id+'_job','job'],[f.id+'_risers','Riser(s)'],[f.id+'_jobno','Job #'],[f.id+'_hdate','Date']]
+    .forEach(([id,ph])=>{ const c=document.createElement('div'); c.className='hcell';
+      if(id===f.id+'_job'){ c.appendChild(jobBlock(f)); g2.appendChild(c); return; }
+      const opts={cls:'grow',placeholder:ph};
+      if(id===f.id+'_hdate') opts.onchange=()=>mirrorDate(f,id);
+      const i=inputEl(id,opts); c.appendChild(i); g2.appendChild(c); });
+  wrap.appendChild(g2);
+
+  /* second header row: zones (wide) + riser counts — no empty/green cell */
+  const g3=document.createElement('div'); g3.className='hgrid hgrid-zones';
+  ['Area / Zones Protected','Total # of Wet Risers','Total # of Other Risers'].forEach(l=>{
+    const c=document.createElement('div'); c.className='hcell';
+    c.innerHTML=`<div class="hlab">${esc(l)}</div>`; g3.appendChild(c); });
+  wrap.appendChild(g3);
+  const g4=document.createElement('div'); g4.className='hgrid2 hgrid-zones';
+  const zc=document.createElement('div'); zc.className='hcell';
+  zc.appendChild(inputEl(f.id+'_zones',{cls:'grow',area:true}));
+  g4.appendChild(zc);
+  [[f.id+'_wetrisers'],[f.id+'_otherrisers']].forEach(([id])=>{
+    const c=document.createElement('div'); c.className='hcell';
+    c.appendChild(inputEl(id,{cls:'grow'})); g4.appendChild(c); });
+  wrap.appendChild(g4);
+  return wrap;
+}
+
+function mirrorDate(f,id){
+  const target=f.id+'_date';
+  const sigEl=document.getElementById('siginput_'+target) || document.getElementById('dateinput_'+target);
+  const manual = VALUES[target+'_auto']===false && val(target);
+  if(sigEl && !manual){ sigEl.value=val(id); setVal(target, val(id)); VALUES[target+'_auto']=true; }
+}
+
+/* 3-row Job Name & Location block: Job name / Street address / City, State, Zip */
+function jobBlock(f){
+  const wrap=document.createElement('div'); wrap.className='jobblock';
+  wrap.appendChild(inputEl(f.id+'_job',{cls:'grow',placeholder:'Job name'}));
+  wrap.appendChild(inputEl(f.id+'_job_street',{cls:'grow',placeholder:'Street address'}));
+  wrap.appendChild(inputEl(f.id+'_job_csz',{cls:'grow',placeholder:'City, State, Zip'}));
+  return wrap;
+}
+
+/* FD-25 header: tall Job cell + tall hydro-paragraph cell + right 2x2 grid,
+   matching the original workbook layout. */
+function headerGridFDC(f){
+  const wrap=document.createElement('div'); wrap.className='fdc-header';
+
+  // left: Job Name & Location (3 stacked rows)
+  const left=document.createElement('div'); left.className='fdc-left';
+  left.innerHTML=`<div class="hlab">Job Name &amp; Location</div>`;
+  left.appendChild(jobBlock(f));
+
+  // middle: hydro paragraph (label only, tall)
+  const mid=document.createElement('div'); mid.className='fdc-mid';
+  mid.innerHTML=`<div class="hlab longlab">${esc(f.header.risersLabel)}</div>`;
+
+  // right: 2x2 grid
+  const right=document.createElement('div'); right.className='fdc-right';
+  const mkCell=(label,id,opts={})=>{
+    const c=document.createElement('div'); c.className='fdc-rcell'+(opts.green?' greencell':'');
+    c.innerHTML=`<div class="hlab">${esc(label)}</div>`;
+    const io=inputEl(id,{cls:'grow',placeholder:opts.ph||''});
+    if(opts.onchange) io.addEventListener('input',opts.onchange);
+    c.appendChild(io); return c;
+  };
+  right.appendChild(mkCell('Job Number', f.id+'_jobno', {ph:'Job #'}));
+  right.appendChild(mkCell('Date', f.id+'_hdate', {ph:'Date', onchange:()=>mirrorDate(f,f.id+'_hdate')}));
+  right.appendChild(mkCell('Total # of Risers', f.id+'_risercount', {ph:''}));
+  right.appendChild(mkCell('Total # of FDCs', f.id+'_fdccount', {ph:''}));
+
+  wrap.appendChild(left); wrap.appendChild(mid); wrap.appendChild(right);
+  return wrap;
+}
+
+/* deficiency type options */
+const DEF_TYPES=['','Critical','Non-Critical','Impairment','Comment','Recommendation'];
+function deficiencyBlock(sec){
+  const d=document.createElement('div'); d.className='deficiency';
+  const head=document.createElement('div'); head.className='dhead';
+  head.innerHTML=`<span>List any deficiencies or comments below</span><span>Deficiency Type</span>`;
+  d.appendChild(head);
+  const rowsWrap=document.createElement('div'); rowsWrap.id='defrows_'+sec.deficiency;
+  const existing=val(sec.deficiency);
+  const arr=Array.isArray(existing)?existing:(existing?JSON.parse(existing):[{c:'',t:''}]);
+  function draw(){
+    rowsWrap.innerHTML='';
+    arr.forEach((r,i)=>{
+      const row=document.createElement('div'); row.className='defrow';
+      const ci=document.createElement('input'); ci.className='fin grow'; ci.value=r.c||''; ci.placeholder='Comment / deficiency';
+      ci.oninput=()=>{ r.c=ci.value; setVal(sec.deficiency,arr); flash(); };
+      const sel=document.createElement('select'); DEF_TYPES.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t||'—';sel.appendChild(o);});
+      sel.value=r.t||''; sel.onchange=()=>{ r.t=sel.value; setVal(sec.deficiency,arr); flash(); };
+      row.appendChild(ci); row.appendChild(sel); rowsWrap.appendChild(row);
+    });
+  }
+  draw();
+  d.appendChild(rowsWrap);
+  const add=document.createElement('button'); add.className='defadd'; add.textContent='+ Add line';
+  add.onclick=()=>{ arr.push({c:'',t:''}); setVal(sec.deficiency,arr); draw(); };
+  d.appendChild(add);
+  return d;
+}
+
+function complianceBlock(sec){
+  const c=document.createElement('div'); c.className='compliance';
+  const a=document.createElement('div'); a.className='cc';
+  a.appendChild(xbox(sec.compliance+'_ok'));
+  const al=document.createElement('span'); al.textContent='The above components are Compliant'; a.appendChild(al);
+  const b=document.createElement('div'); b.className='cc exc';
+  b.appendChild(xbox(sec.compliance+'_exc'));
+  const bl=document.createElement('span'); bl.textContent='Compliant, except as listed below'; b.appendChild(bl);
+  c.appendChild(a); c.appendChild(b);
+  return c;
+}
+
+/* ---------- standard form (FD-17) ---------- */
+function renderStandard(f,paper){
+  f.sections.forEach(sec=>{
+    const s=document.createElement('div'); s.className='section';
+    const t=document.createElement('div'); t.className='sec-title'; t.textContent=sec.name; s.appendChild(t);
+    const items=document.createElement('div'); items.className='items';
+    sec.items.forEach(it=> items.appendChild(renderItem(f,it)));
+    s.appendChild(items);
+    if(sec.note){ const nn=document.createElement('div'); nn.className='locknote'; nn.textContent=sec.note; s.appendChild(nn); }
+    if(sec.compliance) s.appendChild(complianceBlock(sec));
+    if(sec.deficiency) s.appendChild(deficiencyBlock(sec));
+    paper.appendChild(s);
+  });
+}
+
+function renderItem(f,it){
+  const row=document.createElement('div'); row.className='item';
+  const num=document.createElement('div'); num.className='num'; num.textContent=it.n; row.appendChild(num);
+  const txt=document.createElement('div'); txt.className='txt'; txt.textContent=it.text; row.appendChild(txt);
+  const ctrl=document.createElement('div'); ctrl.className='ctrl';
+  const base=f.id+'_i'+it.n;
+  switch(it.type){
+    case 'yn':
+      ctrl.appendChild(labeledBox(base+'_yes','Yes'));
+      ctrl.appendChild(labeledBox(base+'_no','No'));
+      break;
+    case 'check':
+      // No checkbox in the original form — items are marked via the section
+      // "Compliant / except as listed" row and the deficiency list below.
+      break;
+    case 'residual_calc':{
+      // SS3: computed = (Residual − Last Recorded Residual) / Residual.
+      // Fields: item 29 = Residual Pressure, item 32 = Last Recorded Residual.
+      const out=document.createElement('span'); out.className='calcout'; out.id='calc_'+f.id+'_i33';
+      ctrl.appendChild(out);
+      recalcResidual(f); // set initial
+      break;}
+    case 'check_dates':{
+      const na=document.createElement('span'); na.className='cbwrap'; na.appendChild(xbox(base+'_na'));
+      const nal=document.createElement('span'); nal.className='lab'; nal.textContent='N/A'; na.appendChild(nal);
+      ctrl.appendChild(na);
+      const dwrap=document.createElement('div'); dwrap.style.display='flex'; dwrap.style.flexDirection='column'; dwrap.style.gap='3px';
+      const d1=document.createElement('span'); d1.className='cbwrap'; d1.innerHTML='<span class="lab">Date:</span>'; d1.appendChild(inputEl(it.dateId,{placeholder:'—'}));
+      const d2=document.createElement('span'); d2.className='cbwrap'; d2.innerHTML='<span class="lab">By:</span>'; d2.appendChild(inputEl(it.byId,{placeholder:'—'}));
+      dwrap.appendChild(d1); dwrap.appendChild(d2); ctrl.appendChild(dwrap);
+      break;}
+    case 'check_gauge':{
+      const q=document.createElement('span'); q.className='cbwrap'; q.innerHTML='<span class="lab">Qty:</span>'; q.appendChild(inputEl(base+'_qty',{placeholder:'#'})); ctrl.appendChild(q);
+      const dt=document.createElement('span'); dt.className='cbwrap'; dt.innerHTML='<span class="lab">Date(s):</span>'; dt.appendChild(inputEl(base+'_dates',{placeholder:'—'})); ctrl.appendChild(dt);
+      break;}
+    case 'numfield':
+      ctrl.appendChild(inputEl(it.fid,{placeholder:'value', onchange:()=>recalcResidual(f)}));
+      break;
+    case 'risers':{
+      const full=document.createElement('div'); full.className='fieldrow risers-row'; full.style.gridColumn='2/-1'; full.id='risers_'+f.id;
+      renderRisers(full,f);
+      row.appendChild(full); return row;}
+    case 'devices':{
+      // SS4: H/S, Horn, Bell, Other all on one line (already inline)
+      const full=document.createElement('div'); full.className='fieldrow'; full.style.gridColumn='2/-1';
+      ['H/S','Horn','Bell'].forEach(l=> full.appendChild(labeledBox(f.id+'_dev_'+l.replace('/','')+'',l)) );
+      const other=document.createElement('span'); other.className='fl'; other.innerHTML='<span class="k">Other:</span>'; other.appendChild(inputEl(f.id+'_dev_other',{cls:'wide'})); full.appendChild(other);
+      row.appendChild(full); return row;}
+    case 'verifyby':{
+      // SS4: move to a NEW ROW below the text line
+      const txtRow=document.createElement('div'); txtRow.className='item';
+      // this branch: we already have num+txt in `row`; append verify boxes as a full-width row beneath
+      const full=document.createElement('div'); full.className='fieldrow'; full.style.gridColumn='2/-1';
+      ['Customer Verified','FDEC verified','N/A'].forEach(l=> full.appendChild(labeledBox(f.id+'_verify_'+l.replace(/\s/g,''),l)) );
+      row.appendChild(full); return row;}
+    case 'fields':{
+      const full=document.createElement('div'); full.className='fieldrow'; full.style.gridColumn='2/-1';
+      it.fields.forEach(fd=>{ const fl=document.createElement('span'); fl.className='fl';
+        fl.innerHTML=`<span class="k">${esc(fd.label)}:</span>`; fl.appendChild(inputEl(fd.id,{cls:fd.w==='wide'?'wide':''})); full.appendChild(fl); });
+      row.appendChild(full); return row;}
+    default:
+      // plain items: no right-side control
+      break;
+  }
+  row.appendChild(ctrl);
+  return row;
+}
+
+/* SS3: residual reduction calculation.
+   % reduction = (Residual − Last Recorded Residual) / Residual.
+   Item 29 = Residual Pressure (fd17_i29); item 32 = Last Recorded Residual (fd17_i32).
+   If reduction > 10%, show result in red (out of compliance). */
+function recalcResidual(f){
+  const out=document.getElementById('calc_'+f.id+'_i33');
+  if(!out) return;
+  const resid=parseFloat(val(f.id+'_i29'));
+  const last=parseFloat(val(f.id+'_i32'));
+  if(isNaN(resid)||isNaN(last)||resid===0){
+    out.textContent='—'; out.className='calcout'; return;
+  }
+  const pct=((resid-last)/resid)*100;
+  const over=Math.abs(pct)>10;
+  out.textContent=pct.toFixed(1)+'%';
+  out.className='calcout'+(over?' over':' ok');
+  out.title = over
+    ? 'Greater than 10% reduction — out of compliance'
+    : 'Within 10% — compliant';
+}
+
+/* SS5: risers — start with 1, add more, each editable. */
+function renderRisers(container,f){
+  container.innerHTML='';
+  let count=parseInt(val(f.id+'_riser_count'),10);
+  if(isNaN(count)||count<1) count=1;
+  for(let r=1;r<=count;r++){
+    const fl=document.createElement('span'); fl.className='fl riser-pair';
+    const labId=f.id+'_riser'+r+'_label';
+    const lab=document.createElement('input');
+    lab.className='fin riser-label';
+    lab.value = val(labId)!=='' ? val(labId) : ('Riser '+r);
+    lab.title='Editable riser label';
+    lab.oninput=()=>{ setVal(labId, lab.value); flash(); };
+    const colon=document.createElement('span'); colon.className='k'; colon.textContent=':'; colon.style.marginRight='4px';
+    fl.appendChild(lab); fl.appendChild(colon);
+    fl.appendChild(inputEl(f.id+'_riser'+r+'_time',{placeholder:'sec'}));
+    container.appendChild(fl);
+  }
+  const btns=document.createElement('span'); btns.className='fl riser-btns';
+  const add=document.createElement('button'); add.type='button'; add.className='defadd'; add.textContent='+ Add Riser';
+  add.onclick=()=>{ setVal(f.id+'_riser_count', count+1); renderRisers(container,f); };
+  btns.appendChild(add);
+  if(count>1){
+    const rem=document.createElement('button'); rem.type='button'; rem.className='defadd'; rem.style.marginLeft='6px'; rem.textContent='− Remove';
+    rem.onclick=()=>{ VALUES[f.id+'_riser'+count+'_time']=''; VALUES[f.id+'_riser'+count+'_label']=''; setVal(f.id+'_riser_count', count-1); renderRisers(container,f); };
+    btns.appendChild(rem);
+  }
+  container.appendChild(btns);
+}
+
+/* ---------- grid form (FD-24) ---------- */
+function renderGridForm(f,paper){
+  const sec=f.sections[0];
+  const s=document.createElement('div'); s.className='section';
+  const t=document.createElement('div'); t.className='sec-title'; t.textContent=sec.name; s.appendChild(t);
+  const g=document.createElement('div'); g.className='gridform';
+  const gh=document.createElement('div'); gh.className='ghead';
+  gh.innerHTML='<div>#</div><div>Item(s) Inspected / Tested</div><div>OK</div><div>N/A</div><div>NO</div><div>Comment / Note</div>';
+  g.appendChild(gh);
+  sec.items.forEach(it=>{
+    const base=f.id+'_i'+it.n;
+    const r=document.createElement('div'); r.className='grow';
+    const num=document.createElement('div'); num.className='num'; num.textContent=it.n; r.appendChild(num);
+    const tx=document.createElement('div'); tx.className='gtxt'; tx.textContent=it.text;
+    if(it.dateField){ const dd=document.createElement('span'); dd.className='cbwrap'; dd.style.marginLeft='6px'; dd.innerHTML='<span class="lab">Date:</span>'; dd.appendChild(inputEl(base+'_date',{placeholder:'—'})); tx.appendChild(dd); }
+    r.appendChild(tx);
+    ['ok','na','no'].forEach(k=>{ const cx=document.createElement('div'); cx.className='gx'; cx.appendChild(xbox(base+'_'+k)); r.appendChild(cx); });
+    const cm=document.createElement('div'); cm.className='gcmt'; const ci=document.createElement('input'); ci.value=val(base+'_cmt'); ci.placeholder='…';
+    ci.oninput=()=>{ setVal(base+'_cmt',ci.value); flash(); }; cm.appendChild(ci); r.appendChild(cm);
+    g.appendChild(r);
+  });
+  s.appendChild(g);
+  s.appendChild(complianceBlock(sec));
+  s.appendChild(deficiencyBlock(sec));
+  paper.appendChild(s);
+}
+
+/* ---------- FDC form (FD-25) ---------- */
+function renderFDC(f,paper){
+  const sec=f.sections[0];
+  const s=document.createElement('div'); s.className='section';
+  const t=document.createElement('div'); t.className='sec-title'; t.textContent=sec.name; s.appendChild(t);
+  const items=document.createElement('div'); items.className='items';
+  sec.items.forEach(it=>{
+    const base=f.id+'_i'+it.n;
+    const row=document.createElement('div'); row.className='item';
+    const num=document.createElement('div'); num.className='num'; num.textContent=it.n; row.appendChild(num);
+    if(it.type==='fdc_row'){
+      const full=document.createElement('div'); full.className='fieldrow'; full.style.gridColumn='2/-1';
+      [['FDC Connection Type',base+'_conntype'],['Check valve type',base+'_valvetype'],['FDC Piping size',base+'_pipesize']]
+        .forEach(([l,id])=>{ const fl=document.createElement('span'); fl.className='fl'; fl.innerHTML=`<span class="k">${l}:</span>`; fl.appendChild(inputEl(id,{cls:'wide'})); full.appendChild(fl); });
+      row.appendChild(full);
+    } else if(it.type==='hydro_row'){
+      const full=document.createElement('div'); full.className='fieldrow'; full.style.gridColumn='2/-1';
+      full.innerHTML='<span class="fl"><span class="k">FDC piping hydrostatically tested at:</span></span>';
+      const p=document.createElement('span'); p.className='fl'; p.appendChild(inputEl(base+'_psi',{placeholder:'psi'})); p.insertAdjacentHTML('beforeend','<span class="k">&nbsp;psi&nbsp;for&nbsp;</span>');
+      const h=document.createElement('span'); h.className='fl'; h.appendChild(inputEl(base+'_hours',{placeholder:'hrs'})); h.insertAdjacentHTML('beforeend','<span class="k">&nbsp;hours</span>');
+      full.appendChild(p); full.appendChild(h);
+      row.appendChild(full);
+    } else {
+      const txt=document.createElement('div'); txt.className='txt'; txt.textContent=it.text; row.appendChild(txt);
+      const ctrl=document.createElement('div'); ctrl.className='ctrl';
+      ctrl.appendChild(labeledBox(base+'_yes','Yes'));
+      ctrl.appendChild(labeledBox(base+'_no','No'));
+      row.appendChild(ctrl);
+      items.appendChild(row);
+      if(it.type==='yn_why'){
+        const wr=document.createElement('div'); wr.className='fieldrow'; wr.style.gridColumn='1/-1';
+        wr.innerHTML='<span class="fl"><span class="k">If No, why?</span></span>';
+        wr.appendChild(inputEl(base+'_why',{cls:'grow'}));
+        items.appendChild(wr);
+      }
+      return;
+    }
+    items.appendChild(row);
+  });
+  s.appendChild(items);
+  // additional comments
+  const cwrap=document.createElement('div'); cwrap.style.marginTop='10px';
+  const cl=document.createElement('div'); cl.className='sec-title'; cl.textContent='Additional Comments'; cwrap.appendChild(cl);
+  const ta=inputEl(sec.comments,{area:true}); ta.style.marginTop='6px'; cwrap.appendChild(ta);
+  s.appendChild(cwrap);
+  paper.appendChild(s);
+}
+
+/* ---------- save flag ---------- */
+let flashT=null;
+function flash(){ const el=document.getElementById('saveFlag'); el.classList.add('show'); clearTimeout(flashT); flashT=setTimeout(()=>el.classList.remove('show'),1000); }
+
+/* ============================================================================
+   DRAFTS
+============================================================================ */
+document.getElementById('saveDraftBtn').onclick=()=>{
+  const suggested = (val(ACTIVE_FORM+'_job')||'') + ' — ' + (val(ACTIVE_FORM+'_hdate')||new Date().toLocaleDateString());
+  passwordModal('Save Draft','Name this draft so you can find it later.', (name)=>{
+    if(!name.trim()) return 'Enter a name for the draft.';
+    const drafts=getDrafts();
+    const key=ACTIVE_FORM+' :: '+name.trim();
+    drafts[key]={form:ACTIVE_FORM, values:VALUES, savedAt:new Date().toISOString(), by:CURRENT_USER};
+    setDrafts(drafts);
+    DIRTY=false;
+    return null;
+  }, {inputValue:suggested.trim()===('—')?'':suggested, okText:'Save'});
+};
+
+document.getElementById('loadDraftBtn').onclick=()=>{
+  const drafts=getDrafts();
+  const keys=Object.keys(drafts).filter(k=>drafts[k].form===ACTIVE_FORM);
+  if(keys.length===0){ alert('No saved drafts for this form yet.'); return; }
+  draftPicker(keys, drafts);
+};
+
+document.getElementById('newDraftBtn').onclick=()=>{
+  if(confirm('Clear all entries on this form? (Saved drafts are not affected.)')){
+    VALUES={}; DIRTY=false; renderForm(ACTIVE_FORM);
+  }
+};
+
+/* ============================================================================
+   PDF EXPORT  (print to PDF — reliable, no external libs)
+============================================================================ */
+document.getElementById('pdfBtn').onclick=()=>{
+  // Hide the other forms during print (only active form is in DOM, so just print)
+  window.print();
+};
+
+/* ============================================================================
+   MODALS
+============================================================================ */
+function passwordModal(title,msg,onOk,opts={}){
+  const mh=document.getElementById('modalHost');
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  const isPass = /password/i.test(title)===false ? false : true;
+  const typeAttr = (title.toLowerCase().includes('unlock')) ? 'password' : 'text';
+  bg.innerHTML=`<div class="modal">
+    <h3>${esc(title)}</h3><p>${esc(msg)}</p>
+    <input id="modalInput" type="${typeAttr}" ${typeAttr==='text'?'':'autocomplete="off"'}>
+    <div class="merr" id="modalErr"></div>
+    <div class="mbtns"><button id="modalCancel">Cancel</button><button class="go" id="modalOk">${esc(opts.okText||'OK')}</button></div>
+  </div>`;
+  mh.appendChild(bg);
+  const inp=bg.querySelector('#modalInput'); if(opts.inputValue) inp.value=opts.inputValue;
+  inp.focus();
+  const close=()=>mh.removeChild(bg);
+  bg.querySelector('#modalCancel').onclick=close;
+  const submit=()=>{ const err=onOk(inp.value); if(err){ bg.querySelector('#modalErr').textContent=err; } else close(); };
+  bg.querySelector('#modalOk').onclick=submit;
+  inp.onkeydown=(e)=>{ if(e.key==='Enter') submit(); if(e.key==='Escape') close(); };
+}
+
+function draftPicker(keys, drafts){
+  const mh=document.getElementById('modalHost');
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  let rows='';
+  keys.sort((a,b)=> new Date(drafts[b].savedAt)-new Date(drafts[a].savedAt));
+  keys.forEach(k=>{
+    const d=drafts[k]; const nm=k.split(' :: ')[1]||k;
+    rows+=`<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 6px;border-bottom:1px solid #eee">
+      <div><div style="font-weight:600">${esc(nm)}</div><div style="font-size:11px;color:#777">${new Date(d.savedAt).toLocaleString()} · ${esc(d.by||'')}</div></div>
+      <div style="display:flex;gap:6px">
+        <button data-load="${esc(k)}" style="background:#1F3864;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;font-weight:600">Load</button>
+        <button data-del="${esc(k)}" style="background:#fff;border:1px solid #ccc;padding:6px 10px;border-radius:6px;cursor:pointer">Delete</button>
+      </div></div>`;
+  });
+  bg.innerHTML=`<div class="modal" style="max-width:520px">
+    <h3>Load Draft — ${esc(FORMS.find(x=>x.id===ACTIVE_FORM).code)}</h3>
+    <p>Select a saved draft to load into the form.</p>
+    <div style="max-height:340px;overflow:auto">${rows}</div>
+    <div class="mbtns"><button id="dpClose">Close</button></div></div>`;
+  mh.appendChild(bg);
+  const close=()=>mh.removeChild(bg);
+  bg.querySelector('#dpClose').onclick=close;
+  bg.querySelectorAll('[data-load]').forEach(b=> b.onclick=()=>{
+    const k=b.getAttribute('data-load'); VALUES=JSON.parse(JSON.stringify(drafts[k].values||{})); DIRTY=false;
+    renderForm(ACTIVE_FORM); close();
+  });
+  bg.querySelectorAll('[data-del]').forEach(b=> b.onclick=()=>{
+    const k=b.getAttribute('data-del');
+    if(confirm('Delete this draft permanently?')){ const d=getDrafts(); delete d[k]; setDrafts(d); close(); }
+  });
+}
+
+/* ============================================================================
+   BOOT
+============================================================================ */
+(function boot(){
+  const sess=getSession();
+  const users=getUsers();
+  if(sess && sess.username){
+    if(sess.username===ADMIN_USER) enterApp(ADMIN_USER);
+    else if(users[sess.username]) enterApp(sess.username);
+  }
+})();
+
+</script>
+</body>
+</html>
