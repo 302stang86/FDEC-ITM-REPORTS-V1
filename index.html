@@ -93,6 +93,22 @@ button{font-family:inherit}
 .sec-title .inst-remove:hover{background:var(--red)}
 
 .lowpoints{border:1px solid var(--line);border-top:none;padding:8px 10px}
+.summary-tab{background:#fff;border:1.5px solid var(--navy)!important;color:var(--navy)!important;font-weight:700!important}
+.summary-tab.active{background:var(--navy)!important;color:#fff!important}
+.summary-jobline{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink);
+  border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin:12px 0 16px;background:var(--shade)}
+.summary-none{padding:30px;text-align:center;color:var(--ok);font-weight:600;font-size:14px;
+  border:1px dashed var(--ok);border-radius:8px}
+.summary-report{margin-bottom:18px;break-inside:avoid}
+.summary-rtitle{background:var(--navy);color:#fff;font-weight:700;font-size:12.5px;padding:6px 12px;border-radius:4px 4px 0 0}
+.summary-table{border:1px solid var(--line);border-top:none}
+.summary-row{display:grid;grid-template-columns:1.3fr 3fr 1fr;border-bottom:1px solid var(--line2)}
+.summary-row:last-child{border-bottom:none}
+.summary-row>div{padding:6px 10px;font-size:12px}
+.summary-row.summary-th{background:#eef2f8;font-weight:700;color:var(--navy);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+.summary-row:nth-child(even):not(.summary-th){background:var(--shade)}
+.summary-row .summary-type{font-weight:600;color:var(--red)}
+@media(max-width:640px){ .summary-row{grid-template-columns:1fr 2fr 0.8fr} }
 .lowpoints .lp-head{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px}
 .item.subitem{background:#f0f4fa!important}
 .item.subitem .subnum{background:#dbe6f5;font-size:11px}
@@ -124,10 +140,11 @@ button{font-family:inherit}
 .paper-wrap{padding:18px;display:flex;justify-content:center}
 .paper{background:#fff;width:100%;max-width:850px;border:1px solid var(--line);border-radius:6px;
   box-shadow:0 2px 10px rgba(0,0,0,.08);padding:26px 30px 34px}
-.form-head{text-align:center;border-bottom:2px solid var(--navy);padding-bottom:12px;margin-bottom:6px}
+.form-head{position:relative;text-align:center;border-bottom:2px solid var(--navy);padding-bottom:12px;margin-bottom:6px}
 .form-head .co{color:var(--navy);font-weight:800;font-size:18px}
 .form-head .co-logo{display:block;margin:2px auto 4px;height:52px;width:auto;max-width:90%}
-.form-head .emerg{float:right;color:var(--red);font-weight:700;font-size:11px;margin-top:3px}
+.form-head .emerg{position:absolute;top:0;right:0;color:var(--red);font-weight:700;font-size:11px;max-width:150px;text-align:right}
+.form-head.addon-head .rtitle{margin-top:2px}
 .form-head .addr,.form-head .contact{font-size:11px;color:var(--muted)}
 .form-head .rtitle{margin-top:10px;font-weight:700;color:var(--red);font-size:14px}
 .form-head .rcode{font-size:11px;color:var(--muted);letter-spacing:.5px}
@@ -370,7 +387,9 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
     <button id="saveDraftBtn">Save Draft</button>
     <button id="loadDraftBtn">Load Draft</button>
     <button id="newDraftBtn">Clear Form</button>
-    <button class="primary" id="pdfBtn">Save as PDF</button>
+    <button id="pdfAllBtn" class="primary">Save PDF (All Reports)</button>
+    <button id="pdfSummaryBtn">Save Summary PDF</button>
+    <button id="pdfBtn">This Form Only</button>
   </div>
 
   <div class="paper-wrap">
@@ -876,6 +895,11 @@ function buildTabs(){
     wrap.appendChild(sel);
     host.appendChild(wrap);
   }
+  // Summary tab (always last)
+  const sb=document.createElement('button'); sb.className='summary-tab'+(ACTIVE_FORM==='__summary'?' active':'');
+  sb.textContent='📋 Summary';
+  sb.onclick=()=>{ ACTIVE_FORM='__summary'; buildTabs(); renderSummary(); };
+  host.appendChild(sb);
 }
 function tabButton(f,removable){
   const b=document.createElement('button');
@@ -979,17 +1003,21 @@ function labeledBox(id,label){
   return w;
 }
 
-function renderForm(fid){
+function buildPaper(fid){
   const f=FORMS.find(x=>x.id===fid);
-  host.innerHTML='';
+  // Point VALUES at this form's store while building (restored by caller).
+  const prevVALUES=VALUES;
+  loadFormValues(fid);
   const paper=document.createElement('div'); paper.className='paper';
 
   /* header */
-  const head=document.createElement('div'); head.className='form-head';
+  const head=document.createElement('div'); head.className='form-head'+(f.addon?' addon-head':'');
+  const letterhead = f.addon ? '' :
+    `<img class="co-logo" src="${LOGO_DATA}" alt="Fire Defense Equipment Company Inc.">
+     <div class="addr">${esc(COMPANY.addr)}</div>
+     <div class="contact">${esc(COMPANY.contact)}</div>`;
   head.innerHTML=`<div class="emerg">${esc(COMPANY.emergency)}</div>
-    <img class="co-logo" src="${LOGO_DATA}" alt="Fire Defense Equipment Company Inc.">
-    <div class="addr">${esc(COMPANY.addr)}</div>
-    <div class="contact">${esc(COMPANY.contact)}</div>
+    ${letterhead}
     <div class="rtitle">${esc(f.title)}</div>`;
   paper.appendChild(head);
 
@@ -1033,7 +1061,44 @@ function renderForm(fid){
     paper.appendChild(d);
   }
 
-  host.appendChild(paper);
+  VALUES=prevVALUES;   // restore active form's values
+  return paper;
+}
+
+function renderForm(fid){
+  loadFormValues(fid);
+  host.innerHTML='';
+  host.appendChild(buildPaper(fid));
+}
+
+function renderSummary(){
+  host.innerHTML='';
+  host.appendChild(buildSummaryPaper());
+}
+
+/* Build one combined view of all reports to include in the PDF:
+   the three core forms plus every added addon form, in tab order. */
+function printAllReports(){
+  const ids = CORE_FORMS.map(f=>f.id).concat(ADDED.slice());
+  host.innerHTML='';
+  ids.forEach(id=> host.appendChild(buildPaper(id)));
+  loadFormValues(ACTIVE_FORM);
+  const restore=()=>{ restoreActiveView(); window.removeEventListener('afterprint', restore); };
+  window.addEventListener('afterprint', restore);
+  window.print();
+  setTimeout(()=>{ if(host.querySelectorAll('.paper').length>1) restoreActiveView(); }, 1500);
+}
+/* Print ONLY the deficiencies summary as its own PDF. */
+function printSummaryOnly(){
+  host.innerHTML='';
+  host.appendChild(buildSummaryPaper());
+  const restore=()=>{ restoreActiveView(); window.removeEventListener('afterprint', restore); };
+  window.addEventListener('afterprint', restore);
+  window.print();
+  setTimeout(()=>{ restoreActiveView(); }, 1500);
+}
+function restoreActiveView(){
+  if(ACTIVE_FORM==='__summary') renderSummary(); else renderForm(ACTIVE_FORM);
 }
 
 function sigField(id,label,opts={}){
@@ -1354,6 +1419,112 @@ function variantToggle(f){
   return wrap;
 }
 
+/* ============================================================================
+   SUMMARY: collect all filled comment/deficiency entries across every report
+============================================================================ */
+/* For a given form id, return [{name, key}] of every deficiency section,
+   matching the structure the renderer produces. */
+function deficiencySections(fid){
+  const f=FORMS.find(x=>x.id===fid); if(!f) return [];
+  const out=[];
+  if(f.addon){
+    const store=ALLVALUES[fid]||{};
+    const count=Math.max(1, parseInt(store[f.id+'_instances'],10)||1);
+    for(let k=1;k<=count;k++){
+      const inst=f.repeatable.build('inst'+k);
+      const label=inst.groupTitle+(count>1?(' #'+k):'');
+      if(inst.deficiency) out.push({name:label, key:inst.deficiency});
+    }
+    if(f.post && f.postDeficiency) out.push({name:'Post Inspection', key:f.postDeficiency});
+  } else if(f.sections){
+    f.sections.forEach(sec=>{ if(sec.deficiency) out.push({name:sec.name, key:sec.deficiency}); });
+  }
+  // FD-25 comments field (single free-text)
+  if(f.id==='fd25') out.push({name:'Additional Comments', key:'fd25_comments', freeText:true});
+  return out;
+}
+
+/* Collect filled entries for every form (in tab order: core + added). */
+function collectSummary(){
+  const order=CORE_FORMS.map(f=>f.id).concat(ADDED.slice());
+  const result=[];
+  order.forEach(fid=>{
+    const f=FORMS.find(x=>x.id===fid);
+    const store=ALLVALUES[fid]||{};
+    const entries=[];
+    deficiencySections(fid).forEach(sec=>{
+      const raw=store[sec.key];
+      if(sec.freeText){
+        if(raw && String(raw).trim()) entries.push({section:sec.name, comment:String(raw).trim(), type:''});
+        return;
+      }
+      let arr=raw;
+      if(typeof arr==='string'){ try{arr=JSON.parse(arr);}catch{arr=[];} }
+      if(Array.isArray(arr)){
+        arr.forEach(r=>{ if(r && (String(r.c||'').trim() || String(r.t||'').trim())){
+          entries.push({section:sec.name, comment:String(r.c||'').trim(), type:String(r.t||'').trim()});
+        }});
+      }
+    });
+    if(entries.length) result.push({formId:fid, code:f.code, title:f.title, entries});
+  });
+  return result;
+}
+
+/* Build the summary paper element. */
+function buildSummaryPaper(){
+  const paper=document.createElement('div'); paper.className='paper summary-paper';
+  const head=document.createElement('div'); head.className='form-head';
+  head.innerHTML=`<div class="emerg">${esc(COMPANY.emergency)}</div>
+    <img class="co-logo" src="${LOGO_DATA}" alt="Fire Defense Equipment Company Inc.">
+    <div class="addr">${esc(COMPANY.addr)}</div>
+    <div class="contact">${esc(COMPANY.contact)}</div>
+    <div class="rtitle">Deficiencies Summary</div>`;
+  paper.appendChild(head);
+
+  // shared job/date header line
+  const jobLine=document.createElement('div'); jobLine.className='summary-jobline';
+  const job=sharedStore()['shared_job']||'';
+  const street=sharedStore()['shared_job_street']||'';
+  const csz=sharedStore()['shared_job_csz']||'';
+  const jobno=sharedStore()['shared_jobno']||'';
+  const date=sharedStore()['shared_hdate']||'';
+  jobLine.innerHTML=`<div><b>Job:</b> ${esc([job,street,csz].filter(Boolean).join(', ')||'—')}</div>
+    <div><b>Job #:</b> ${esc(jobno||'—')} &nbsp;&nbsp; <b>Date:</b> ${esc(date||'—')}</div>`;
+  paper.appendChild(jobLine);
+
+  const data=collectSummary();
+  if(data.length===0){
+    const none=document.createElement('div'); none.className='summary-none';
+    none.textContent='No deficiencies or comments have been entered on any report.';
+    paper.appendChild(none);
+    return paper;
+  }
+
+  data.forEach(rep=>{
+    const block=document.createElement('div'); block.className='summary-report';
+    const rt=document.createElement('div'); rt.className='summary-rtitle';
+    rt.textContent=rep.code+' — '+rep.title;
+    block.appendChild(rt);
+
+    const table=document.createElement('div'); table.className='summary-table';
+    const th=document.createElement('div'); th.className='summary-row summary-th';
+    th.innerHTML='<div>Section</div><div>Comment / Deficiency</div><div>Type</div>';
+    table.appendChild(th);
+    rep.entries.forEach(e=>{
+      const r=document.createElement('div'); r.className='summary-row';
+      const sd=document.createElement('div'); sd.textContent=e.section;
+      const cd=document.createElement('div'); cd.textContent=e.comment||'—';
+      const td=document.createElement('div'); td.className='summary-type'; td.textContent=e.type||'—';
+      r.appendChild(sd); r.appendChild(cd); r.appendChild(td);
+      table.appendChild(r);
+    });
+    block.appendChild(table);
+    paper.appendChild(block);
+  });
+  return paper;
+}
+
 function renderAddon(f,paper){
   // repeatable valve/system instances
   const count=Math.max(1, parseInt(val(f.id+'_instances'),10)||1);
@@ -1621,24 +1792,69 @@ function flash(){ const el=document.getElementById('saveFlag'); el.classList.add
 ============================================================================ */
 document.getElementById('saveDraftBtn').onclick=()=>{
   const suggested = (val(ACTIVE_FORM+'_job')||'') + ' — ' + (val(ACTIVE_FORM+'_hdate')||new Date().toLocaleDateString());
-  passwordModal('Save Draft','Name this draft so you can find it later.', (name)=>{
+  passwordModal('Save Draft (All Reports)',
+    'Name this draft. It saves all reports together, in the app and as a downloadable file.', (name)=>{
     if(!name.trim()) return 'Enter a name for the draft.';
+    const nm=name.trim();
+    const payload={ type:'fdec_itm_draft', name:nm, form:ACTIVE_FORM,
+      allValues:ALLVALUES, added:ADDED.slice(),
+      savedAt:new Date().toISOString(), by:CURRENT_USER };
+    // 1) in-app draft
     const drafts=getDrafts();
-    const key=ACTIVE_FORM+' :: '+name.trim();
-    drafts[key]={form:ACTIVE_FORM, values:VALUES, allValues:ALLVALUES, added:ADDED.slice(),
-      savedAt:new Date().toISOString(), by:CURRENT_USER};
+    drafts[ACTIVE_FORM+' :: '+nm]={form:ACTIVE_FORM, values:VALUES, allValues:ALLVALUES,
+      added:ADDED.slice(), savedAt:payload.savedAt, by:CURRENT_USER};
     setDrafts(drafts);
+    // 2) downloadable file (browser chooses folder / prompts per settings)
+    downloadDraftFile(payload, nm);
     DIRTY=false;
     return null;
   }, {inputValue:suggested.trim()===('—')?'':suggested, okText:'Save'});
 };
 
+function downloadDraftFile(payload, name){
+  const safe=(name||'FDEC_ITM_Draft').replace(/[^A-Za-z0-9._ -]/g,'_').slice(0,80);
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=safe+'.fdecdraft.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 100);
+}
+
 document.getElementById('loadDraftBtn').onclick=()=>{
   const drafts=getDrafts();
   const keys=Object.keys(drafts);
-  if(keys.length===0){ alert('No saved drafts yet.'); return; }
-  draftPicker(keys, drafts);
+  draftPicker(keys, drafts);   // always open picker; it includes a "Load from file" option
 };
+
+/* hidden file input for importing a draft file */
+(function(){
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='.json,application/json'; inp.style.display='none'; inp.id='draftFileInput';
+  document.body.appendChild(inp);
+  inp.onchange=(e)=>{
+    const file=e.target.files&&e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>{
+      try{
+        const data=JSON.parse(reader.result);
+        const av=data.allValues||data.values||data;
+        if(typeof av!=='object') throw new Error('Unrecognized draft file');
+        ALLVALUES=JSON.parse(JSON.stringify(av.allValues||av));
+        if(!ALLVALUES.__shared && data.allValues && data.allValues.__shared) ALLVALUES.__shared=data.allValues.__shared;
+        ADDED=Array.isArray(data.added)?data.added.slice():[];
+        ACTIVE_FORM=data.form&&FORMS.some(f=>f.id===data.form)?data.form:'fd17';
+        loadFormValues(ACTIVE_FORM);
+        buildTabs(); renderForm(ACTIVE_FORM);
+        // also store it as an in-app draft for convenience
+        if(data.name){ const d=getDrafts(); d[ACTIVE_FORM+' :: '+data.name]={form:ACTIVE_FORM, values:VALUES, allValues:ALLVALUES, added:ADDED.slice(), savedAt:data.savedAt||new Date().toISOString(), by:data.by||CURRENT_USER}; setDrafts(d); }
+        alert('Draft loaded from file — all reports restored.');
+      }catch(err){ alert('Could not load that draft file: '+(err.message||err)); }
+      e.target.value='';
+    };
+    reader.readAsText(file);
+  };
+})();
 
 document.getElementById('newDraftBtn').onclick=()=>{
   if(confirm('Clear all entries on this form? (Saved drafts are not affected.)')){
@@ -1650,8 +1866,14 @@ document.getElementById('newDraftBtn').onclick=()=>{
    PDF EXPORT  (print to PDF — reliable, no external libs)
 ============================================================================ */
 document.getElementById('pdfBtn').onclick=()=>{
-  // Hide the other forms during print (only active form is in DOM, so just print)
+  // current form only
   window.print();
+};
+document.getElementById('pdfAllBtn').onclick=()=>{
+  printAllReports();
+};
+document.getElementById('pdfSummaryBtn').onclick=()=>{
+  printSummaryOnly();
 };
 
 /* ============================================================================
@@ -1693,14 +1915,19 @@ function draftPicker(keys, drafts){
         <button data-del="${esc(k)}" style="background:#fff;border:1px solid #ccc;padding:6px 10px;border-radius:6px;cursor:pointer">Delete</button>
       </div></div>`;
   });
+  const emptyMsg = keys.length? '' : '<div style="padding:16px;text-align:center;color:#777;font-size:13px">No in-app drafts yet. You can load a draft file you saved earlier.</div>';
   bg.innerHTML=`<div class="modal" style="max-width:520px">
     <h3>Load Draft</h3>
-    <p>Select a saved draft. Loading restores all forms and added system reports from that draft.</p>
-    <div style="max-height:340px;overflow:auto">${rows}</div>
-    <div class="mbtns"><button id="dpClose">Close</button></div></div>`;
+    <p>Select a saved draft, or load a draft file. Loading restores all reports and added system forms.</p>
+    <div style="max-height:300px;overflow:auto">${rows}${emptyMsg}</div>
+    <div class="mbtns" style="flex-wrap:wrap">
+      <button id="dpFromFile" style="flex:1;background:#1F3864;color:#fff;border-color:#1F3864">⬆ Load from File…</button>
+      <button id="dpClose">Close</button>
+    </div></div>`;
   mh.appendChild(bg);
   const close=()=>mh.removeChild(bg);
   bg.querySelector('#dpClose').onclick=close;
+  bg.querySelector('#dpFromFile').onclick=()=>{ close(); document.getElementById('draftFileInput').click(); };
   bg.querySelectorAll('[data-load]').forEach(b=> b.onclick=()=>{
     const k=b.getAttribute('data-load'); const dr=drafts[k];
     if(dr.allValues){ ALLVALUES=JSON.parse(JSON.stringify(dr.allValues)); }
