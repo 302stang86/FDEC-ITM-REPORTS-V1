@@ -107,6 +107,15 @@ button{font-family:inherit}
 .rp-summary{border-top:1px dashed var(--line);border-radius:0;padding-top:12px}
 .rp-actions{display:flex;gap:14px;margin:10px 2px 0}
 .rp-link{background:none;border:none;color:var(--navy);font-size:12px;font-weight:600;cursor:pointer;padding:2px 0;text-decoration:underline}
+.mu-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line2)}
+.mu-row:last-child{border-bottom:none}
+.mu-info .mu-name{font-weight:700;color:var(--ink);font-size:13px}
+.mu-info .mu-user{font-size:11px;color:var(--muted)}
+.mu-actions{display:flex;gap:6px}
+.mu-reset{background:#fff;border:1px solid var(--navy);color:var(--navy);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+.mu-reset:hover{background:#eef2f8}
+.mu-del{background:#fff;border:1px solid var(--red);color:var(--red);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+.mu-del:hover{background:#fdecea}
 .summary-tab{background:#fff;border:1.5px solid var(--navy)!important;color:var(--navy)!important;font-weight:700!important}
 .summary-tab.active{background:var(--navy)!important;color:#fff!important}
 .summary-jobline{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink);
@@ -396,6 +405,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
   <div class="toolbar">
     <span class="lockpill" id="lockPill">🔒 Locked fields protected</span>
     <button id="adminToggle">Admin: Unlock Fields</button>
+    <button id="manageUsersBtn" style="display:none">Manage Users</button>
     <span class="grow"></span>
     <span class="saveflag" id="saveFlag">✓ Saved</span>
     <button id="saveDraftBtn">Save Draft</button>
@@ -1071,6 +1081,7 @@ function enterApp(user){
   const disp=IS_ADMIN?'Mpeebles':((users[user]&&users[user].display)||user);
   document.getElementById('whoami').innerHTML = disp + (IS_ADMIN?' <span class="badge">ADMIN</span>':'');
   document.getElementById('adminToggle').style.display = IS_ADMIN?'':'none';
+  const mub=document.getElementById('manageUsersBtn'); if(mub) mub.style.display = IS_ADMIN?'':'none';
   updateLockPill();
   authScreen.classList.add('hidden');
   appScreen.classList.remove('hidden');
@@ -2255,11 +2266,69 @@ document.getElementById('pdfSummaryBtn').onclick=()=>{
 /* ============================================================================
    MODALS
 ============================================================================ */
+/* ---------- Admin: Manage Users ---------- */
+if(document.getElementById('manageUsersBtn')){
+  document.getElementById('manageUsersBtn').onclick=()=>{ if(IS_ADMIN) manageUsersModal(); };
+}
+function manageUsersModal(){
+  const mh=document.getElementById('modalHost')||document.body;
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  const render=()=>{
+    const users=getUsers();
+    const names=Object.keys(users).sort((a,b)=>a.localeCompare(b));
+    let rows='';
+    if(names.length===0){
+      rows='<div style="padding:18px;text-align:center;color:#777;font-size:13px">No technician accounts are registered in this browser yet.</div>';
+    } else {
+      names.forEach(u=>{
+        const disp=(users[u].display||u);
+        rows+=`<div class="mu-row">
+          <div class="mu-info"><div class="mu-name">${esc(disp)}</div><div class="mu-user">@${esc(u)}</div></div>
+          <div class="mu-actions">
+            <button class="mu-reset" data-user="${esc(u)}">Reset Password</button>
+            <button class="mu-del" data-user="${esc(u)}">Remove</button>
+          </div></div>`;
+      });
+    }
+    bg.innerHTML=`<div class="modal" style="max-width:540px">
+      <h3>Manage Users <span class="badge">ADMIN</span></h3>
+      <p>Registered technician accounts in this browser. The admin account (Mpeebles) is managed separately and can't be removed here.</p>
+      <div style="max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px">${rows}</div>
+      <div class="mbtns"><button id="muClose">Close</button></div></div>`;
+    bg.querySelector('#muClose').onclick=close;
+    bg.querySelectorAll('.mu-del').forEach(btn=>{
+      btn.onclick=()=>{
+        const u=btn.getAttribute('data-user');
+        if(!confirm('Remove the account "'+u+'"? This deletes their login from this browser. Their saved drafts are not deleted.')) return;
+        const users=getUsers(); delete users[u]; setUsers(users);
+        render();
+      };
+    });
+    bg.querySelectorAll('.mu-reset').forEach(btn=>{
+      btn.onclick=()=>{
+        const u=btn.getAttribute('data-user');
+        passwordModal('Reset Password','Enter a new password for "'+u+'" (minimum 4 characters).', async (np)=>{
+          if(!np || np.length<4) return 'Password must be at least 4 characters.';
+          const users=getUsers(); if(!users[u]) return 'That account no longer exists.';
+          const salt=randSalt();
+          users[u].salt=salt; users[u].hash=await sha(salt+np);
+          setUsers(users);
+          setTimeout(render,50);
+          return null;
+        }, {okText:'Reset Password', isPassword:true});
+      };
+    });
+  };
+  mh.appendChild(bg);
+  const close=()=>{ if(bg.parentNode) mh.removeChild(bg); };
+  render();
+}
+
 function passwordModal(title,msg,onOk,opts={}){
   const mh=document.getElementById('modalHost');
   const bg=document.createElement('div'); bg.className='modal-bg';
   const isPass = /password/i.test(title)===false ? false : true;
-  const typeAttr = (title.toLowerCase().includes('unlock')) ? 'password' : 'text';
+  const typeAttr = (/unlock|password/i.test(title)) ? 'password' : 'text';
   bg.innerHTML=`<div class="modal">
     <h3>${esc(title)}</h3><p>${esc(msg)}</p>
     <input id="modalInput" type="${typeAttr}" ${typeAttr==='text'?'':'autocomplete="off"'}>
@@ -2271,7 +2340,7 @@ function passwordModal(title,msg,onOk,opts={}){
   inp.focus();
   const close=()=>mh.removeChild(bg);
   bg.querySelector('#modalCancel').onclick=close;
-  const submit=()=>{ const err=onOk(inp.value); if(err){ bg.querySelector('#modalErr').textContent=err; } else close(); };
+  const submit=async ()=>{ const err=await onOk(inp.value); if(err){ bg.querySelector('#modalErr').textContent=err; } else close(); };
   bg.querySelector('#modalOk').onclick=submit;
   inp.onkeydown=(e)=>{ if(e.key==='Enter') submit(); if(e.key==='Escape') close(); };
 }
