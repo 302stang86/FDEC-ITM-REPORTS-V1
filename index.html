@@ -93,6 +93,20 @@ button{font-family:inherit}
 .sec-title .inst-remove:hover{background:var(--red)}
 
 .lowpoints{border:1px solid var(--line);border-top:none;padding:8px 10px}
+.correction-ref{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--navy);margin:14px 0}
+.correction-ref .cref-box{padding:6px 10px;border-right:1px solid var(--line)}
+.correction-ref .cref-box:last-child{border-right:none}
+.correction-list .item{grid-template-columns:34px 1fr}
+.correction-list .item .txt{padding:6px 10px}
+.rp-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer}
+.rp-row:hover{background:var(--shade)}
+.rp-row .rp-cb,.rp-summary input{width:17px;height:17px;cursor:pointer}
+.rp-code{font-weight:700;color:var(--navy);min-width:58px;font-size:12px}
+.rp-name{font-size:13px;color:var(--ink)}
+.rp-tag{margin-left:auto;font-size:10px;font-weight:700;background:#e9f6ec;color:#1a7f37;padding:2px 8px;border-radius:9px}
+.rp-summary{border-top:1px dashed var(--line);border-radius:0;padding-top:12px}
+.rp-actions{display:flex;gap:14px;margin:10px 2px 0}
+.rp-link{background:none;border:none;color:var(--navy);font-size:12px;font-weight:600;cursor:pointer;padding:2px 0;text-decoration:underline}
 .summary-tab{background:#fff;border:1.5px solid var(--navy)!important;color:var(--navy)!important;font-weight:700!important}
 .summary-tab.active{background:var(--navy)!important;color:#fff!important}
 .summary-jobline{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink);
@@ -387,7 +401,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
     <button id="saveDraftBtn">Save Draft</button>
     <button id="loadDraftBtn">Load Draft</button>
     <button id="newDraftBtn">Clear Form</button>
-    <button id="pdfAllBtn" class="primary">Save PDF (All Reports)</button>
+    <button id="pdfAllBtn" class="primary">Save Reports as PDF…</button>
     <button id="pdfSummaryBtn">Save Summary PDF</button>
     <button id="pdfBtn">This Form Only</button>
   </div>
@@ -577,7 +591,224 @@ const FD25 = {
   disclaimer: DISCLAIMER
 };
 
-const CORE_FORMS = [FD17, FD24, FD25];
+/* ============================================================ FREQUENCY / LIMITED FORMS (permanent tabs) */
+
+/* ---- FD-19 Monthly ---- */
+const FD19 = {
+  id:"fd19", code:"FD-19",
+  title:"Monthly Fire Sprinkler System Inspection Report",
+  header:{ risersLabel:"This Report is for Riser(s)" },
+  sections:[
+    { name:"Pre-Inspection", items:[
+      {n:1, text:"Is the fire suppression system monitored by a central monitoring station?", type:"yn"},
+      {n:2, text:"The Fire alarm panel is in normal status and the Fire suppression system is in service upon arrival", type:"check"}
+    ], compliance:"c_1_2", deficiency:"d_1_2", note:"#1.) FDEC recommends all water flow and supervisory devices to be monitored, per IBC 901.6, 903.4"},
+    { name:"System Visual Inspection", items:[
+      {n:3, text:"Accessible Control valves and associated system valves show no signs of leaks, damage/missing components.", type:"check"},
+      {n:4, text:"Control valves and system associated valves are in normal position or are locked or sealed.", type:"check"},
+      {n:5, text:"Tamper switch, Pressure switch, Waterflow switch and associated devices show no signs of damage/missing components.", type:"check"},
+      {n:6, text:"Water gong, retard chamber and associated system mechanical devices show no signs of leaks, damage/missing components.", type:"check"},
+      {n:7, text:"Gauges and associated trim show no signs of leaks, damage/missing components.", type:"check"},
+      {n:8, text:"All Water gauges replaced every 5 years", type:"check_gauge"},
+      {n:9, text:"FDC inspected for signs of damage, seized fittings and missing caps.", type:"check"},
+      {n:10, text:"At time of report, Riser Room was above 40° F", type:"check"}
+    ], compliance:"c_3_10", deficiency:"d_3_10"}
+  ],
+  passLabel:"The Riser(s) are free from Critical & Impaired Deficiencies:",
+  disclaimer:[DISCLAIMER[0], DISCLAIMER[2], DISCLAIMER[3], DISCLAIMER[6]]
+};
+
+/* ---- FD-20 Quarterly ---- */
+const FD20 = {
+  id:"fd20", code:"FD-20",
+  title:"Quarterly Fire Sprinkler System Inspection & Testing Report",
+  header:{ risersLabel:"This Report is for Riser(s)" },
+  sections:[
+    { name:"Pre-Inspection", items:[
+      {n:1, text:"Is the fire suppression system monitored by a central monitoring station?", type:"yn"},
+      {n:2, text:"The Fire alarm panel is in normal status and the Fire suppression system is in service upon arrival", type:"check"},
+      {n:3, text:"Local Dispatch and/or Monitoring company notified of system testing:", type:"check"},
+      {n:4, text:"All pertinent parties notified before testing", type:"check"},
+      {n:5, text:"Fire Dispatch:", type:"fields", fields:[
+        {id:"fd20_firedispatch", label:"Fire Dispatch", w:"wide"},
+        {id:"fd20_firedispatch_phone", label:"Phone"},
+        {id:"fd20_firedispatch_id", label:"Name or Badge ID #"}]},
+      {n:6, text:"Monitoring company:", type:"fields", fields:[
+        {id:"fd20_moncompany", label:"Monitoring company", w:"wide"},
+        {id:"fd20_moncompany_phone", label:"Phone"},
+        {id:"fd20_moncompany_id", label:"Name or Badge ID #"}]}
+    ], compliance:"c_1_6", deficiency:"d_1_6", note:"#1.) FDEC recommends all water flow and supervisory devices to be monitored, per IBC 901.6, 903.4"},
+    { name:"System Visual Inspection / Testing", items:[
+      {n:7, text:"Accessible Control valves and associated system valves show no signs of leaks, damage/missing components.", type:"check"},
+      {n:8, text:"Control valves and system associated valves are in normal position or are locked or sealed.", type:"check"},
+      {n:9, text:"Tamper switch, Pressure switch, Waterflow switch and associated devices show no signs of damage/missing components.", type:"check"},
+      {n:10, text:"Water gong, retard chamber and associated system mechanical devices show no signs of leaks, damage/missing components.", type:"check"},
+      {n:11, text:"Mechanical alarm devices tested and operated properly (water motor gong).", type:"wftimes"},
+      {n:12, text:"Water pressure gauges are operable, show no signs of leaks, damage, missing components and water supply pressure is normal.", type:"check"},
+      {n:13, text:"Air/nitrogen pressure gauges are operable, show no signs of leaks, damage, missing components and air/nitrogen pressure is normal.", type:"check"},
+      {n:14, text:"Low air alarm operated properly.", type:"check_psi", fid:"fd20_lowair"},
+      {n:15, text:"At time of report, Riser Room was above 40° F", type:"check"},
+      {n:16, text:"FDC visible, not damaged, swivels & clapper operate smoothly, gaskets & caps in-place, interior of connection inspected.", type:"check"}
+    ], compliance:"c_7_16", deficiency:"d_7_16"},
+    { name:"Main Drain Testing", items:[
+      {n:17, text:"Adequate drainage for main drain testing", type:"check"},
+      {n:18, text:"Beginning Static Pressure (psi):", type:"numfield", fid:"fd20_static"},
+      {n:19, text:"Residual Pressure (psi):", type:"numfield", fid:"fd20_resid"},
+      {n:20, text:"Return Static Pressure (psi):", type:"numfield", fid:"fd20_return"},
+      {n:21, text:"Time to return to static Pressure (sec.):", type:"numfield", fid:"fd20_time"},
+      {n:22, text:"Last Recorded Residual Pressure (psi):", type:"numfield", fid:"fd20_lastresid"},
+      {n:23, text:"The Residual pressure is less than a 10% reduction from original or last test", type:"residual_calc_g", residId:"fd20_resid", lastId:"fd20_lastresid", outId:"fd20"}
+    ], compliance:"c_17_23", deficiency:"d_17_23"}
+  ],
+  passLabel:"The Riser(s) are free from Critical & Impaired Deficiencies:",
+  disclaimer:[DISCLAIMER[0], DISCLAIMER[2], DISCLAIMER[3], DISCLAIMER[4], DISCLAIMER[6]]
+};
+
+/* ---- FD-21 Semi-Annual ---- */
+const FD21 = {
+  id:"fd21", code:"FD-21",
+  title:"Semi-Annual Fire Sprinkler System Inspection & Testing Report",
+  header:{ risersLabel:"This Report is for Riser(s)" },
+  sections:[
+    { name:"Pre-Inspection", items:[
+      {n:1, text:"Is the fire suppression system monitored by a central monitoring station?", type:"yn"},
+      {n:2, text:"The Fire alarm panel is in normal status and the Fire suppression system is in service upon arrival", type:"check"},
+      {n:3, text:"Local Dispatch and/or Monitoring company notified of system testing:", type:"check"},
+      {n:4, text:"All pertinent parties notified before testing", type:"check"},
+      {n:5, text:"Fire Dispatch:", type:"fields", fields:[
+        {id:"fd21_firedispatch", label:"Fire Dispatch", w:"wide"},
+        {id:"fd21_firedispatch_phone", label:"Phone"},
+        {id:"fd21_firedispatch_id", label:"Name or Badge ID #"}]},
+      {n:6, text:"Monitoring company:", type:"fields", fields:[
+        {id:"fd21_moncompany", label:"Monitoring company", w:"wide"},
+        {id:"fd21_moncompany_phone", label:"Phone"},
+        {id:"fd21_moncompany_id", label:"Name or Badge ID #"}]}
+    ], compliance:"c_1_6", deficiency:"d_1_6", note:"#1.) FDEC recommends all water flow and supervisory devices to be monitored, per IBC 901.6, 903.4"},
+    { name:"System Visual Inspection / Testing", items:[
+      {n:7, text:"Accessible Control valves and associated system valves show no signs of leaks, damage/missing components.", type:"check"},
+      {n:8, text:"Control valves and system associated valves are in normal position or are locked or sealed.", type:"check"},
+      {n:9, text:"Tamper switch, Pressure switch, Waterflow switch and associated devices show no signs of damage/missing components.", type:"check"},
+      {n:10, text:"Water gong, retard chamber and associated system mechanical devices show no signs of leaks, damage/missing components.", type:"check"},
+      {n:11, text:"Vane, paddle & pressure alarm devices tested & operated properly.", type:"check"},
+      {n:12, text:"Valve tamper switches tested and operated properly.", type:"check"},
+      {n:13, text:"Low air alarm operated properly.", type:"check_psi", fid:"fd21_lowair"},
+      {n:14, text:"At time of report, Riser Room was above 40° F", type:"check"},
+      {n:15, text:"Water pressure gauges are operable, show no signs of leaks, damage, missing components and water supply pressure is normal.", type:"check"},
+      {n:16, text:"Air/nitrogen pressure gauges are operable, show no signs of leaks, damage, missing components and air/nitrogen pressure is normal.", type:"check"},
+      {n:17, text:"FDC visible, not damaged, swivels & clapper operate smoothly, gaskets & caps in-place, interior of connection inspected.", type:"check"}
+    ], compliance:"c_7_17", deficiency:"d_7_17"},
+    { name:"Main Drain Testing", items:[
+      {n:18, text:"Adequate drainage for main drain testing", type:"check"},
+      {n:19, text:"Beginning Static Pressure (psi):", type:"numfield", fid:"fd21_static"},
+      {n:20, text:"Residual Pressure (psi):", type:"numfield", fid:"fd21_resid"},
+      {n:21, text:"Return Static Pressure (psi):", type:"numfield", fid:"fd21_return"},
+      {n:22, text:"Time to return to static Pressure (sec.):", type:"numfield", fid:"fd21_time"},
+      {n:23, text:"Last Recorded Residual Pressure (psi):", type:"numfield", fid:"fd21_lastresid"},
+      {n:24, text:"The Residual pressure is less than a 10% reduction from original or last test", type:"residual_calc_g", residId:"fd21_resid", lastId:"fd21_lastresid", outId:"fd21"}
+    ], compliance:"c_18_24", deficiency:"d_18_24"}
+  ],
+  passLabel:"The Riser(s) are free from Critical & Impaired Deficiencies:",
+  disclaimer:[DISCLAIMER[0], DISCLAIMER[2], DISCLAIMER[3], DISCLAIMER[4], DISCLAIMER[6]]
+};
+
+/* ---- FD-16 Limited System ---- */
+const FD16 = {
+  id:"fd16", code:"FD-16",
+  title:"Annual Limited System Inspection, Testing and Maintenance Report",
+  header:{ risersLabel:"This Report is for Riser(s)" },
+  sections:[
+    { name:"Pre-Inspection", items:[
+      {n:1, text:"Is the fire suppression system monitored by a central monitoring station?", type:"yn"},
+      {n:2, text:"The Fire alarm panel is in normal status and the Fire suppression system is in service upon arrival", type:"check"},
+      {n:3, text:"Local Dispatch and/or Monitoring company notified of system testing:", type:"check"},
+      {n:4, text:"All pertinent parties notified before testing", type:"check"},
+      {n:5, text:"Fire Dispatch:", type:"fields", fields:[
+        {id:"fd16_firedispatch", label:"Fire Dispatch", w:"wide"},
+        {id:"fd16_firedispatch_phone", label:"Phone"},
+        {id:"fd16_firedispatch_id", label:"Name or Badge ID #"}]},
+      {n:6, text:"Monitoring company:", type:"fields", fields:[
+        {id:"fd16_moncompany", label:"Monitoring company", w:"wide"},
+        {id:"fd16_moncompany_phone", label:"Phone"},
+        {id:"fd16_moncompany_id", label:"Name or Badge ID #"}]}
+    ], compliance:"c_1_6", deficiency:"d_1_6", note:"1) FDEC recommends all water flow and supervisory devices to be monitored, per IBC 901.6, 903.4"},
+    { name:"System Identifications", items:[
+      {n:7, text:"Hydraulic nameplates attached and legible", type:"check"},
+      {n:8, text:"Any additional system locations are properly identified at the riser; e.g. Dry, Antifreeze, Pre-Action, Deluge or Any other systems", type:"check"},
+      {n:9, text:"All known Control valves, Sectional valves, Main drains, Auxiliary drains, ITVs, Drum drips or low points properly identified and accessible.", type:"check"},
+      {n:10, text:"FDC is properly identified and visible", type:"check"}
+    ], compliance:"c_7_10", deficiency:"d_7_10"},
+    { name:"Additional NFPA Required Inspections", items:[
+      {n:11, text:"Fire Alarm system Inspected within the past year.", type:"check_dates", dateId:"fd16_i11_date", byId:"fd16_i11_by"},
+      {n:12, text:"5 Year internal pipe inspection.", type:"check_dates", dateId:"fd16_i12_date", byId:"fd16_i12_by"},
+      {n:13, text:"5 Year FDC piping hydrostatic testing", type:"check_dates", dateId:"fd16_i13_date", byId:"fd16_i13_by"},
+      {n:14, text:"System Backflow device inspected within the past 3 years.", type:"check_dates", dateId:"fd16_i14_date", byId:"fd16_i14_by"}
+    ], compliance:"c_11_14", deficiency:"d_11_14"},
+    { name:"System Functionality", items:[
+      {n:15, text:"Accessible Control valves and Sectional valves exercised and, if required, lubricated.", type:"check"},
+      {n:16, text:"Tamper switch signals verified within two revolutions at the fire alarm panel or keypad and restored when in normal position. Or valves are properly locked or sealed.", type:"check"},
+      {n:17, text:"Waterflow Switch tested through Inspectors test valve. (ITV)", type:"check"},
+      {n:18, text:"Alarm device(s) above the FDC are working properly", type:"check"},
+      {n:19, text:"FDC inspected for signs of damage, seized fittings and missing caps.", type:"check"},
+      {n:20, text:"FDC lubricated and visible interior piping inspected for foreign material", type:"check"},
+      {n:21, text:"Time for waterflow alarm to activate (seconds):", type:"risers"},
+      {n:22, text:"Building fire alarm devices that activated:", type:"devices"},
+      {n:23, text:"Central monitoring station received the correct signals during testing and verified by:", type:"verifyby"},
+      {n:24, text:"All Water gauges replaced every 5 years", type:"check_gauge"},
+      {n:25, text:"Adequate drainage for main drain testing", type:"check"},
+      {n:26, text:"Beginning Static Pressure (psi):", type:"numfield", fid:"fd16_static"},
+      {n:27, text:"Residual Pressure (psi):", type:"numfield", fid:"fd16_resid"},
+      {n:28, text:"Return Static Pressure (psi):", type:"numfield", fid:"fd16_return"},
+      {n:29, text:"Time to return to static Pressure (sec.):", type:"numfield", fid:"fd16_time"},
+      {n:30, text:"Last Recorded Residual Pressure (psi):", type:"numfield", fid:"fd16_lastresid"},
+      {n:31, text:"The Residual pressure is less than a 10% reduction from original or last test", type:"residual_calc_g", residId:"fd16_resid", lastId:"fd16_lastresid", outId:"fd16"}
+    ], compliance:"c_15_31", deficiency:"d_15_31"},
+    { name:"System Visual Inspection", items:[
+      {n:32, text:"Visible sprinkler piping appears to be in good condition with no signs of leaks, corrosion, damage or foreign material", type:"check"},
+      {n:33, text:"Visible sprinkler heads appear to be in good condition with no signs of leaks, loading, corrosion, damage or foreign material", type:"check"},
+      {n:34, text:"Visible sprinkler heads appear to be properly oriented and no storage within 18” of the deflector", type:"check"},
+      {n:35, text:"Escutcheon rings and Concealed cover plates are in place with no visible signs of mechanical defect or foreign material effecting the cover plates performance", type:"check"},
+      {n:36, text:"Sprinkler heads subjected to harsh environment for 5 years have been replaced or sample tested", type:"check"},
+      {n:37, text:"Sprinkler heads manufactured prior to 1920 have been replaced", type:"check"},
+      {n:38, text:"Sprinkler heads in service for 75 years have been replaced or sample tested; then retested every 5 years", type:"check"},
+      {n:39, text:"Sprinkler heads in service for 50 years have been replaced or sample tested; then retested every 10 years", type:"check"},
+      {n:40, text:"Fast response element sprinklers in service for 25 years have been replaced or sample tested; then retested every 10 years", type:"check"},
+      {n:41, text:"ESFR and CMSA Fast response element sprinklers in service for 20 years have been replaced or sample tested; then retested every 10 years", type:"check"},
+      {n:42, text:"Dry barrel sprinklers in service for 20 years have been replaced or sample tested; then retested every 10 years", type:"check"},
+      {n:43, text:"Solder-type sprinklers with temperature classification of extra high (325° F) or greater that are exposed to semi continuously or continuous maximum allowable ambient temperature replaced or sample tested every 5 years", type:"check"},
+      {n:44, text:"The installing company left the proper equipment list for the spare head box and the spare head box appears to be properly equipped with sprinkler heads, head wrench(s) and concealed sprinkler head tools.", type:"check"},
+      {n:45, text:"At time of report, Riser Room was above 40° F", type:"check"}
+    ], compliance:"c_32_45", deficiency:"d_32_45"},
+    { name:"Post Inspection", items:[
+      {n:46, text:"Fire alarm panel reset and cleared after inspection", type:"check"},
+      {n:47, text:"Sprinkler system returned to full service and pertinent parties notified after inspection", type:"check"}
+    ], compliance:"c_46_47", deficiency:"d_46_47"}
+  ],
+  passLabel:"The Limited System Riser(s) are free from Critical & Impaired Deficiencies:",
+  disclaimer:DISCLAIMER
+};
+
+/* ---- Deficiency Correction Report ---- */
+const CORRECTION = {
+  id:"correction", code:"FD-DCR", correction:true,
+  title:"Sprinkler System Deficiency Correction Report",
+  header:{ risersLabel:"This Report is for Riser(s)" },
+  refFields:[
+    {id:"correction_ref_date", label:"Date of inspection report this work applies to:"},
+    {id:"correction_ref_jobno", label:"Inspection report job # this work is based on:"}
+  ],
+  lists:[
+    {title:"Deficiencies Corrected on this Job", key:"correction_fixed", start:4},
+    {title:"Impaired or Critical Deficiencies Remaining on this Job", key:"correction_remaining", start:2}
+  ],
+  passLabel:"All noted deficiencies on this report have been corrected:",
+  disclaimer:[
+    "The customer is notified by this report that they are solely responsible for repairing all deficiencies noted above. Fire Defense will be pleased to quote & complete these repairs when requested in writing. The customer is responsible to maintain a copy of this report on file for the authority having jurisdiction when requested.",
+    DISCLAIMER[2],
+    DISCLAIMER[5]
+  ]
+};
+
+const CORE_FORMS = [FD17, FD24, FD25, FD16, FD19, FD20, FD21, CORRECTION];
 
 /* ============================================================ ADD-ON SYSTEM FORMS */
 
@@ -933,6 +1164,7 @@ function addonName(f){
 }
 function shortName(f){
   return ({fd17:'Annual Wet', fd24:'5-Yr Internal', fd25:'FDC Hydro',
+    fd16:'Limited', fd19:'Monthly', fd20:'Quarterly', fd21:'Semi-Annual', correction:'Deficiency Correction',
     dry:'Dry', af:'Antifreeze', deluge_a:'Deluge/PA Annual', deluge_sa:'Deluge/PA S-A'})[f.id]||f.code;
 }
 let DIRTY=false;
@@ -1028,7 +1260,8 @@ function buildPaper(fid){
   if(f.variant){ paper.appendChild(variantToggle(f)); }
 
   /* sections */
-  if(f.addon) renderAddon(f,paper);
+  if(f.correction) renderCorrection(f,paper);
+  else if(f.addon) renderAddon(f,paper);
   else if(f.id==='fd24') renderGridForm(f,paper);
   else if(f.id==='fd25') renderFDC(f,paper);
   else renderStandard(f,paper);
@@ -1078,16 +1311,77 @@ function renderSummary(){
 
 /* Build one combined view of all reports to include in the PDF:
    the three core forms plus every added addon form, in tab order. */
-function printAllReports(){
-  const ids = CORE_FORMS.map(f=>f.id).concat(ADDED.slice());
+function printSelectedReports(ids, includeSummary){
   host.innerHTML='';
+  if(includeSummary && collectSummary().length){ host.appendChild(buildSummaryPaper()); }
   ids.forEach(id=> host.appendChild(buildPaper(id)));
   loadFormValues(ACTIVE_FORM);
   const restore=()=>{ restoreActiveView(); window.removeEventListener('afterprint', restore); };
   window.addEventListener('afterprint', restore);
   window.print();
-  setTimeout(()=>{ if(host.querySelectorAll('.paper').length>1) restoreActiveView(); }, 1500);
+  setTimeout(()=>{ if(host.querySelectorAll('.paper').length!==1 || ACTIVE_FORM==='__summary') restoreActiveView(); }, 1500);
 }
+function printAllReports(){
+  // default: every report currently in play
+  printSelectedReports(CORE_FORMS.map(f=>f.id).concat(ADDED.slice()), false);
+}
+
+/* Does a form have any user-entered data worth printing? Used to pre-check the picker. */
+function formHasData(fid){
+  const store=ALLVALUES[fid]||{};
+  const keys=Object.keys(store);
+  if(keys.some(k=>{ const v=store[k]; return v!=null && v!=='' && v!==false; })) return true;
+  // shared job data counts as "started" only if this is a core form? Keep simple: no.
+  return false;
+}
+
+/* Report-selection modal shown before creating a combined PDF. */
+function reportPickerModal(){
+  const ids=CORE_FORMS.map(f=>f.id).concat(ADDED.slice());
+  const mh=document.getElementById('modalHost')||document.body;
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  let rows='';
+  ids.forEach(id=>{
+    const f=FORMS.find(x=>x.id===id);
+    const checked=formHasData(id)?'checked':'';
+    rows+=`<label class="rp-row">
+      <input type="checkbox" class="rp-cb" data-id="${id}" ${checked}>
+      <span class="rp-code">${esc(f.code)}</span>
+      <span class="rp-name">${esc(shortName(f))}</span>
+      ${formHasData(id)?'<span class="rp-tag">has entries</span>':''}
+    </label>`;
+  });
+  const hasSummary=collectSummary().length>0;
+  bg.innerHTML=`<div class="modal" style="max-width:520px">
+    <h3>Select Reports to Save</h3>
+    <p>Choose which reports to include in the PDF. Reports with entries are pre-selected.</p>
+    <div style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px 4px">${rows}</div>
+    <label class="rp-row rp-summary" style="margin-top:8px;${hasSummary?'':'opacity:.5'}">
+      <input type="checkbox" id="rpSummary" ${hasSummary?'checked':'disabled'}>
+      <span class="rp-name">Include Deficiencies Summary${hasSummary?'':' (no deficiencies entered)'}</span>
+    </label>
+    <div class="rp-actions">
+      <button id="rpAll" class="rp-link">Select all</button>
+      <button id="rpNone" class="rp-link">Clear all</button>
+    </div>
+    <div class="mbtns">
+      <button id="rpCancel">Cancel</button>
+      <button id="rpCreate" class="primary">Create PDF</button>
+    </div></div>`;
+  mh.appendChild(bg);
+  const close=()=>mh.removeChild(bg);
+  bg.querySelector('#rpCancel').onclick=close;
+  bg.querySelector('#rpAll').onclick=()=>bg.querySelectorAll('.rp-cb').forEach(c=>c.checked=true);
+  bg.querySelector('#rpNone').onclick=()=>bg.querySelectorAll('.rp-cb').forEach(c=>c.checked=false);
+  bg.querySelector('#rpCreate').onclick=()=>{
+    const sel=[...bg.querySelectorAll('.rp-cb')].filter(c=>c.checked).map(c=>c.getAttribute('data-id'));
+    const inclSum=bg.querySelector('#rpSummary') && bg.querySelector('#rpSummary').checked;
+    if(sel.length===0 && !inclSum){ alert('Select at least one report to save.'); return; }
+    close();
+    printSelectedReports(sel, inclSum);
+  };
+}
+
 /* Print ONLY the deficiencies summary as its own PDF. */
 function printSummaryOnly(){
   host.innerHTML='';
@@ -1267,6 +1561,46 @@ function complianceBlock(sec){
   return c;
 }
 
+/* ---------- Deficiency Correction Report ---------- */
+function renderCorrection(f,paper){
+  // reference fields (which inspection this correction applies to)
+  const ref=document.createElement('div'); ref.className='correction-ref';
+  f.refFields.forEach(rf=>{
+    const box=document.createElement('div'); box.className='cref-box';
+    box.innerHTML=`<div class="hlab">${esc(rf.label)}</div>`;
+    box.appendChild(inputEl(rf.id,{cls:'grow'}));
+    ref.appendChild(box);
+  });
+  paper.appendChild(ref);
+
+  // two growable numbered lists
+  f.lists.forEach(list=>{
+    const s=document.createElement('div'); s.className='section';
+    const t=document.createElement('div'); t.className='sec-title'; t.textContent=list.title; s.appendChild(t);
+    const wrap=document.createElement('div'); wrap.className='items correction-list';
+    const start=Math.max(list.start||3, parseInt(val(list.key+'_count'),10)||list.start||3);
+    const draw=()=>{
+      wrap.innerHTML='';
+      for(let i=1;i<=start;i++){
+        const row=document.createElement('div'); row.className='item';
+        const num=document.createElement('div'); num.className='num'; num.textContent=i; row.appendChild(num);
+        const cell=document.createElement('div'); cell.className='txt'; cell.style.gridColumn='2 / -1';
+        cell.appendChild(inputEl(list.key+'_'+i,{cls:'grow'}));
+        row.appendChild(cell);
+        wrap.appendChild(row);
+      }
+    };
+    draw();
+    s.appendChild(wrap);
+    const addWrap=document.createElement('div'); addWrap.className='add-instance-wrap';
+    const add=document.createElement('button'); add.type='button'; add.className='defadd'; add.textContent='+ Add line';
+    add.onclick=()=>{ setVal(list.key+'_count', start+1); renderForm(f.id); };
+    addWrap.appendChild(add);
+    s.appendChild(addWrap);
+    paper.appendChild(s);
+  });
+}
+
 /* ---------- standard form (FD-17) ---------- */
 function renderStandard(f,paper){
   f.sections.forEach(sec=>{
@@ -1304,6 +1638,23 @@ function renderItem(f,it){
       ctrl.appendChild(out);
       recalcResidual(f); // set initial
       break;}
+    case 'residual_calc_g':{
+      // Generic residual calc using explicit field ids from the item.
+      const out=document.createElement('span'); out.className='calcout'; out.id='calc_'+it.outId;
+      out.dataset.resid=it.residId; out.dataset.last=it.lastId;
+      ctrl.appendChild(out);
+      recalcResidualG(it.residId, it.lastId, it.outId);
+      break;}
+    case 'check_psi':{
+      const p=document.createElement('span'); p.className='cbwrap'; p.innerHTML='<span class="lab">psi:</span>';
+      p.appendChild(inputEl(it.fid,{placeholder:'psi'})); ctrl.appendChild(p);
+      break;}
+    case 'wftimes':{
+      // Water-motor gong timing: WF1..WF5 with N/A option
+      const full=document.createElement('div'); full.className='fieldrow'; full.style.gridColumn='2/-1';
+      for(let n=1;n<=5;n++){ const fl=document.createElement('span'); fl.className='fl';
+        fl.innerHTML=`<span class="k">WF${n} Time:</span>`; fl.appendChild(inputEl(f.id+'_wf'+n,{placeholder:'sec'})); full.appendChild(fl); }
+      row.appendChild(full); return row;}
     case 'check_dates':{
       const na=document.createElement('span'); na.className='cbwrap'; na.appendChild(xbox(base+'_na'));
       const nal=document.createElement('span'); nal.className='lab'; nal.textContent='N/A'; na.appendChild(nal);
@@ -1318,7 +1669,7 @@ function renderItem(f,it){
       const dt=document.createElement('span'); dt.className='cbwrap'; dt.innerHTML='<span class="lab">Date(s):</span>'; dt.appendChild(inputEl(base+'_dates',{placeholder:'—'})); ctrl.appendChild(dt);
       break;}
     case 'numfield':
-      ctrl.appendChild(inputEl(it.fid,{placeholder:'value', onchange:()=>recalcResidual(f)}));
+      ctrl.appendChild(inputEl(it.fid,{placeholder:'value', onchange:()=>{ recalcResidual(f); recalcAllG(); }}));
       break;
     case 'risers':{
       const full=document.createElement('div'); full.className='fieldrow risers-row'; full.style.gridColumn='2/-1'; full.id='risers_'+f.id;
@@ -1369,6 +1720,26 @@ function recalcResidual(f){
   out.title = over
     ? 'Greater than 10% reduction — out of compliance'
     : 'Within 10% — compliant';
+}
+
+/* Generic residual calc for FD-16/20/21: reads explicit field ids. */
+function recalcResidualG(residId, lastId, outId){
+  const out=document.getElementById('calc_'+outId);
+  if(!out) return;
+  const resid=parseFloat(val(residId));
+  const last=parseFloat(val(lastId));
+  if(isNaN(resid)||isNaN(last)||resid===0){ out.textContent='—'; out.className='calcout'; return; }
+  const pct=((resid-last)/resid)*100;
+  const over=Math.abs(pct)>10;
+  out.textContent=pct.toFixed(1)+'%';
+  out.className='calcout'+(over?' over':' ok');
+  out.title=over?'Greater than 10% reduction — out of compliance':'Within 10% — compliant';
+}
+/* Recompute every generic residual output currently in the DOM. */
+function recalcAllG(){
+  document.querySelectorAll('.calcout[data-resid]').forEach(o=>{
+    recalcResidualG(o.dataset.resid, o.dataset.last, o.id.replace(/^calc_/,''));
+  });
 }
 
 /* SS5: risers — start with 1, add more, each editable. */
@@ -1461,9 +1832,14 @@ function collectSummary(){
       let arr=raw;
       if(typeof arr==='string'){ try{arr=JSON.parse(arr);}catch{arr=[];} }
       if(Array.isArray(arr)){
-        arr.forEach(r=>{ if(r && (String(r.c||'').trim() || String(r.t||'').trim())){
-          entries.push({section:sec.name, comment:String(r.c||'').trim(), type:String(r.t||'').trim()});
-        }});
+        arr.forEach(r=>{ if(!r) return;
+          const type=String(r.t||'').trim();
+          const comment=String(r.c||'').trim();
+          if(!comment && !type) return;
+          // Exclude informational lines: 'Comment' and 'Recommendation' are not deficiencies.
+          if(type==='Comment' || type==='Recommendation') return;
+          entries.push({section:sec.name, comment, type});
+        });
       }
     });
     if(entries.length) result.push({formId:fid, code:f.code, title:f.title, entries});
@@ -1870,7 +2246,7 @@ document.getElementById('pdfBtn').onclick=()=>{
   window.print();
 };
 document.getElementById('pdfAllBtn').onclick=()=>{
-  printAllReports();
+  reportPickerModal();
 };
 document.getElementById('pdfSummaryBtn').onclick=()=>{
   printSummaryOnly();
