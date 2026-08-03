@@ -116,6 +116,8 @@ button{font-family:inherit}
 .mu-reset:hover{background:#eef2f8}
 .mu-del{background:#fff;border:1px solid var(--red);color:var(--red);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
 .mu-del:hover{background:#fdecea}
+.mu-tag-roster{font-size:10px;font-weight:700;background:#eef2f8;color:var(--navy);padding:3px 10px;border-radius:9px}
+.mu-subhead{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:14px 2px 6px}
 .summary-tab{background:#fff;border:1.5px solid var(--navy)!important;color:var(--navy)!important;font-weight:700!important}
 .summary-tab.active{background:var(--navy)!important;color:#fff!important}
 .summary-jobline{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink);
@@ -358,34 +360,19 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
     <!-- login -->
     <div id="loginBox">
       <label>Username</label>
-      <input id="loginUser" autocomplete="username" placeholder="Username">
+      <input id="loginUser" autocomplete="username" placeholder="Username (email)">
       <label>Password</label>
       <input id="loginPass" type="password" autocomplete="current-password" placeholder="Password">
       <label class="stay"><input type="checkbox" id="stayLogged" checked> Keep me signed in on this device</label>
       <button class="btn" id="loginBtn">Sign In</button>
       <div class="err" id="loginErr"></div>
-      <div class="swap">No account? <a id="toRegister">Register</a></div>
+      <div class="swap">Accounts are issued by your administrator.</div>
     </div>
 
-    <!-- register -->
+    <!-- register (disabled: accounts are pre-created centrally) -->
     <div id="registerBox" class="hidden">
-      <label>Full name</label>
-      <input id="regDisplay" placeholder="First Last">
-      <label>Username</label>
-      <input id="regUser" autocomplete="username" placeholder="Choose a username">
-      <div class="row2">
-        <div>
-          <label>Password</label>
-          <input id="regPass" type="password" autocomplete="new-password" placeholder="Password">
-        </div>
-        <div>
-          <label>Confirm</label>
-          <input id="regPass2" type="password" autocomplete="new-password" placeholder="Re-enter">
-        </div>
-      </div>
-      <button class="btn" id="regBtn">Create Account</button>
-      <div class="err" id="regErr"></div>
-      <div class="swap">Already registered? <a id="toLogin">Sign in</a></div>
+      <div class="sub" style="margin:8px 0 14px">Accounts are created by your administrator. Please contact them for your username and password.</div>
+      <div class="swap"><a id="toLogin">Back to sign in</a></div>
     </div>
   </div>
 </div>
@@ -435,6 +422,26 @@ const LOGO_DATA = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAg
 /* ============================================================================
    FDEC ITM Report forms — data model
    Reconstructed from Copy_of_2026_Fire_Sprinkler_ITM_Reports workbook.
+
+   ┌────────────────────────────────────────────────────────────────────────┐
+   │  TECHNICIAN ACCOUNTS (edit this list to add / remove / change techs)     │
+   │  These accounts are the same on every device that loads the app.         │
+   │  Username is case-insensitive. To add a tech, copy a line and change the │
+   │  username, password, and name. To remove a tech, delete their line.      │
+   │  NOTE: because this list ships inside the page, treat these passwords as  │
+   │  a simple access gate, not private secrets.                              │
+   └────────────────────────────────────────────────────────────────────────┘ */
+const ROSTER = [
+  { user:"wh1@firedefense.com",  pass:"4350FDEC", name:"Wade Hagie",     role:"Manager" },
+  { user:"th1@firedefense.com",  pass:"4350FDEC", name:"Tim Hagie",      role:"Technician" },
+  { user:"oh1@firedefense.com",  pass:"4350FDEC", name:"Owen Hillock",   role:"Technician" },
+  { user:"jk1@firedefense.com",  pass:"4350FDEC", name:"Jacob Kanczuga", role:"Technician" },
+  { user:"eric@firedefense.com", pass:"4350FDEC", name:"Eric Ostling",   role:"Technician" },
+  { user:"cw2@firedefense.com",  pass:"4350FDEC", name:"Corey Wilson",   role:"Technician" },
+  { user:"Guest",                pass:"4350FDEC", name:"Guest",          role:"Guest" }
+];
+
+/* ============================================================================
    Field types:
      text    — free text input (single line)
      area    — multi-line textarea
@@ -992,8 +999,9 @@ const LS = {
   session:'fdec_itm_session',
   drafts: 'fdec_itm_drafts'      // {draftName: {form, values, savedAt, by}}
 };
-const ADMIN_USER = 'mpeebles';
+const ADMIN_USER = 'mp1@firedefense.com';
 const ADMIN_PASS = 'Chaosenvy69@';
+const ADMIN_NAME = 'Mitch Peebles';
 
 let CURRENT_USER = null;
 let IS_ADMIN = false;
@@ -1028,10 +1036,13 @@ function setDrafts(d){ localStorage.setItem(LS.drafts, JSON.stringify(d)); }
 /* ---------- auth UI ---------- */
 const authScreen=document.getElementById('authScreen');
 const appScreen=document.getElementById('appScreen');
-document.getElementById('toRegister').onclick=()=>{document.getElementById('loginBox').classList.add('hidden');document.getElementById('registerBox').classList.remove('hidden');};
-document.getElementById('toLogin').onclick=()=>{document.getElementById('registerBox').classList.add('hidden');document.getElementById('loginBox').classList.remove('hidden');};
+const _toReg=document.getElementById('toRegister');
+if(_toReg) _toReg.onclick=()=>{document.getElementById('loginBox').classList.add('hidden');document.getElementById('registerBox').classList.remove('hidden');};
+const _toLogin=document.getElementById('toLogin');
+if(_toLogin) _toLogin.onclick=()=>{document.getElementById('registerBox').classList.add('hidden');document.getElementById('loginBox').classList.remove('hidden');};
 
-document.getElementById('regBtn').onclick=async ()=>{
+const _regBtn=document.getElementById('regBtn');
+if(_regBtn) _regBtn.onclick=async ()=>{
   const disp=document.getElementById('regDisplay').value.trim();
   const u=document.getElementById('regUser').value.trim().toLowerCase();
   const p=document.getElementById('regPass').value;
@@ -1050,21 +1061,40 @@ document.getElementById('regBtn').onclick=async ()=>{
   enterApp(u);
 };
 
+/* Look up a tech in the central roster (case-insensitive username). */
+function rosterLookup(username){
+  const u=(username||'').trim().toLowerCase();
+  return ROSTER.find(r=>r.user.trim().toLowerCase()===u) || null;
+}
+
 document.getElementById('loginBtn').onclick=async ()=>{
-  const u=document.getElementById('loginUser').value.trim().toLowerCase();
+  const raw=document.getElementById('loginUser').value.trim();
+  const u=raw.toLowerCase();
   const p=document.getElementById('loginPass').value;
   const err=document.getElementById('loginErr'); err.textContent='';
+  const stay=document.getElementById('stayLogged').checked;
+  // 1) Admin
   if(u===ADMIN_USER){
     if(p!==ADMIN_PASS){err.textContent='Incorrect admin password.';return;}
-    if(document.getElementById('stayLogged').checked) setSession({username:ADMIN_USER}); else setSession(null);
+    setSession(stay?{username:ADMIN_USER}:null);
     enterApp(ADMIN_USER); return;
   }
+  // 2) Central roster (pre-created accounts, same on every device)
+  const r=rosterLookup(u);
+  if(r){
+    if(p!==r.pass){err.textContent='Incorrect password.';return;}
+    setSession(stay?{username:r.user.toLowerCase()}:null);
+    enterApp(r.user.toLowerCase()); return;
+  }
+  // 3) Legacy self-registered accounts stored in this browser (backward compatibility)
   const users=getUsers(); const rec=users[u];
-  if(!rec){err.textContent='No account with that username.';return;}
-  const ok=(await sha(rec.salt+p))===rec.hash;
-  if(!ok){err.textContent='Incorrect password.';return;}
-  if(document.getElementById('stayLogged').checked) setSession({username:u}); else setSession(null);
-  enterApp(u);
+  if(rec){
+    const ok=(await sha(rec.salt+p))===rec.hash;
+    if(!ok){err.textContent='Incorrect password.';return;}
+    setSession(stay?{username:u}:null);
+    enterApp(u); return;
+  }
+  err.textContent='No account with that username.';
 };
 
 document.getElementById('logoutBtn').onclick=()=>{
@@ -1078,7 +1108,8 @@ function enterApp(user){
   IS_ADMIN=(user===ADMIN_USER);
   ADMIN_UNLOCKED=false;
   const users=getUsers();
-  const disp=IS_ADMIN?'Mpeebles':((users[user]&&users[user].display)||user);
+  const rosterRec=rosterLookup(user);
+  const disp=IS_ADMIN?ADMIN_NAME:(rosterRec?rosterRec.name:((users[user]&&users[user].display)||user));
   document.getElementById('whoami').innerHTML = disp + (IS_ADMIN?' <span class="badge">ADMIN</span>':'');
   document.getElementById('adminToggle').style.display = IS_ADMIN?'':'none';
   const mub=document.getElementById('manageUsersBtn'); if(mub) mub.style.display = IS_ADMIN?'':'none';
@@ -2274,34 +2305,43 @@ function manageUsersModal(){
   const mh=document.getElementById('modalHost')||document.body;
   const bg=document.createElement('div'); bg.className='modal-bg';
   const render=()=>{
+    // central roster (source of truth, edited in the file)
+    let rosterRows=`<div class="mu-row">
+        <div class="mu-info"><div class="mu-name">${esc(ADMIN_NAME)}</div><div class="mu-user">@${esc(ADMIN_USER)}</div></div>
+        <div class="mu-tag-roster">Admin</div></div>`;
+    ROSTER.forEach(r=>{
+      rosterRows+=`<div class="mu-row">
+        <div class="mu-info"><div class="mu-name">${esc(r.name||r.user)}</div><div class="mu-user">@${esc(r.user)}</div></div>
+        <div class="mu-tag-roster">${esc(r.role||'Roster')}</div></div>`;
+    });
+    // legacy self-registered accounts still stored in this browser
     const users=getUsers();
     const names=Object.keys(users).sort((a,b)=>a.localeCompare(b));
-    let rows='';
-    if(names.length===0){
-      rows='<div style="padding:18px;text-align:center;color:#777;font-size:13px">No technician accounts are registered in this browser yet.</div>';
-    } else {
-      names.forEach(u=>{
-        const disp=(users[u].display||u);
-        rows+=`<div class="mu-row">
-          <div class="mu-info"><div class="mu-name">${esc(disp)}</div><div class="mu-user">@${esc(u)}</div></div>
-          <div class="mu-actions">
-            <button class="mu-reset" data-user="${esc(u)}">Reset Password</button>
-            <button class="mu-del" data-user="${esc(u)}">Remove</button>
-          </div></div>`;
-      });
-    }
-    bg.innerHTML=`<div class="modal" style="max-width:540px">
+    let legacyRows='';
+    names.forEach(u=>{
+      legacyRows+=`<div class="mu-row">
+        <div class="mu-info"><div class="mu-name">${esc(users[u].display||u)}</div><div class="mu-user">@${esc(u)} · this device only</div></div>
+        <div class="mu-actions">
+          <button class="mu-reset" data-user="${esc(u)}">Reset</button>
+          <button class="mu-del" data-user="${esc(u)}">Remove</button>
+        </div></div>`;
+    });
+    const legacySection = names.length? `
+      <div class="mu-subhead">Legacy accounts (this browser only)</div>
+      <div style="border:1px solid var(--line);border-radius:8px">${legacyRows}</div>` : '';
+    bg.innerHTML=`<div class="modal" style="max-width:560px">
       <h3>Manage Users <span class="badge">ADMIN</span></h3>
-      <p>Registered technician accounts in this browser. The admin account (Mpeebles) is managed separately and can't be removed here.</p>
-      <div style="max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:8px">${rows}</div>
+      <p>Technician accounts are defined in the app's central roster, so they're the same on every device. To add, remove, or change a tech, edit the <b>ROSTER</b> list near the top of the app file and re-deploy.</p>
+      <div class="mu-subhead">Central roster (all devices)</div>
+      <div style="max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:8px">${rosterRows}</div>
+      ${legacySection}
       <div class="mbtns"><button id="muClose">Close</button></div></div>`;
     bg.querySelector('#muClose').onclick=close;
     bg.querySelectorAll('.mu-del').forEach(btn=>{
       btn.onclick=()=>{
         const u=btn.getAttribute('data-user');
-        if(!confirm('Remove the account "'+u+'"? This deletes their login from this browser. Their saved drafts are not deleted.')) return;
-        const users=getUsers(); delete users[u]; setUsers(users);
-        render();
+        if(!confirm('Remove the legacy account "'+u+'" from this browser?')) return;
+        const us=getUsers(); delete us[u]; setUsers(us); render();
       };
     });
     bg.querySelectorAll('.mu-reset').forEach(btn=>{
@@ -2309,13 +2349,10 @@ function manageUsersModal(){
         const u=btn.getAttribute('data-user');
         passwordModal('Reset Password','Enter a new password for "'+u+'" (minimum 4 characters).', async (np)=>{
           if(!np || np.length<4) return 'Password must be at least 4 characters.';
-          const users=getUsers(); if(!users[u]) return 'That account no longer exists.';
-          const salt=randSalt();
-          users[u].salt=salt; users[u].hash=await sha(salt+np);
-          setUsers(users);
-          setTimeout(render,50);
-          return null;
-        }, {okText:'Reset Password', isPassword:true});
+          const us=getUsers(); if(!us[u]) return 'That account no longer exists.';
+          const salt=randSalt(); us[u].salt=salt; us[u].hash=await sha(salt+np); setUsers(us);
+          setTimeout(render,50); return null;
+        }, {okText:'Reset Password'});
       };
     });
   };
