@@ -163,6 +163,28 @@ button{font-family:inherit}
 
 /* ---------- Form paper ---------- */
 .paper-wrap{padding:18px;display:flex;justify-content:center}
+.actionbar{position:fixed;left:0;right:0;bottom:0;z-index:55;background:#fbfcfd;
+  border-top:1px solid var(--line);box-shadow:0 -3px 12px rgba(0,0,0,.10);
+  padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+.actionbar button{background:#fff;border:1px solid var(--line);padding:9px 15px;border-radius:7px;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--ink)}
+.actionbar button:hover{border-color:var(--navy);color:var(--navy)}
+.actionbar button.primary{background:var(--red);border-color:var(--red);color:#fff}
+.actionbar button.primary:hover{background:var(--red2)}
+.actionbar .saveflag{font-size:12px;color:var(--ok);font-weight:600;opacity:0;transition:opacity .2s}
+.actionbar .saveflag.show{opacity:1}
+.actionbar .ab-sep{width:1px;height:24px;background:var(--line);margin:0 4px}
+#appScreen{padding-bottom:74px}
+@media(max-width:640px){ .actionbar{gap:6px;padding:8px 8px} .actionbar button{padding:8px 11px;font-size:12px} .actionbar .ab-sep{display:none} #appScreen{padding-bottom:110px} }
+@media print{ .actionbar{display:none!important} }
+#backToTop{position:fixed;right:20px;bottom:82px;width:46px;height:46px;border-radius:50%;
+  background:var(--navy);color:#fff;border:none;font-size:22px;line-height:1;cursor:pointer;
+  box-shadow:0 3px 10px rgba(0,0,0,.28);z-index:60;display:flex;align-items:center;justify-content:center;
+  opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s,transform .2s,visibility .2s}
+#backToTop.show{opacity:1;visibility:visible;transform:translateY(0)}
+#backToTop:hover{background:var(--navy2,#16294a)}
+#backToTop:active{transform:translateY(1px)}
+@media print{ #backToTop{display:none!important} }
 .paper{background:#fff;width:100%;max-width:850px;border:1px solid var(--line);border-radius:6px;
   box-shadow:0 2px 10px rgba(0,0,0,.08);padding:26px 30px 34px}
 .form-head{position:relative;text-align:center;border-bottom:2px solid var(--navy);padding-bottom:12px;margin-bottom:6px}
@@ -336,13 +358,33 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
   .paper + .paper{ break-before:page; }
 }
 @media(max-width:640px){
-  .hgrid,.hgrid2{grid-template-columns:1fr 1fr}
-  .item{grid-template-columns:28px 1fr}
-  .item .ctrl{grid-column:1/-1;justify-content:flex-start;border-top:1px dashed var(--line2)}
+  .paper{padding:16px 12px 24px;border-radius:0}
+  .form-head .emerg{position:static;display:block;text-align:center;max-width:none;margin:0 0 6px}
+  .form-head .co-logo{height:40px}
+  .paper-wrap{padding:8px}
+  .hgrid,.hgrid2{grid-template-columns:1fr}
+  .item{grid-template-columns:26px 1fr}
+  .item .num{font-size:11px}
+  .item .txt{font-size:12px;padding:7px 8px}
+  .item .ctrl{grid-column:1/-1;justify-content:flex-start;border-top:1px dashed var(--line2);
+    min-width:0;flex-wrap:wrap;gap:8px 14px;padding:7px 8px}
+  .item.subitem .txt{padding-left:12px}
+  /* full-width inline field rows stack their pieces */
+  .fieldrow{flex-direction:column;align-items:stretch;gap:8px}
+  .fieldrow .fl{width:100%}
+  .fin.grow,.fieldrow .fl .fin{max-width:100%;width:100%;min-width:0;box-sizing:border-box}
+  .fin.wide{min-width:0}
+  .cbwrap .fin{min-width:0;max-width:110px}
+  .cbwrap{flex-wrap:wrap}
   .compliance{grid-template-columns:1fr}
-  .sig{grid-template-columns:1fr}
-  .gridform .ghead,.gridform .grow{grid-template-columns:26px 1fr 34px 34px 34px}
+  .sig{grid-template-columns:1fr;gap:10px}
+  .correction-ref{grid-template-columns:1fr}
+  .fdc-header{grid-template-columns:1fr}
+  .devices{flex-wrap:wrap}
+  .gridform .ghead,.gridform .grow{grid-template-columns:24px 1fr 30px 30px 30px}
   .gridform .ghead div:last-child,.gridform .grow .gcmt{display:none}
+  .summary-row{grid-template-columns:1fr 1.6fr 0.8fr}
+  .summary-row>div{padding:5px 6px;font-size:11px}
 }
 
 </style>
@@ -393,14 +435,6 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
     <span class="lockpill" id="lockPill">🔒 Locked fields protected</span>
     <button id="adminToggle">Admin: Unlock Fields</button>
     <button id="manageUsersBtn" style="display:none">Manage Users</button>
-    <span class="grow"></span>
-    <span class="saveflag" id="saveFlag">✓ Saved</span>
-    <button id="saveDraftBtn">Save Draft</button>
-    <button id="loadDraftBtn">Load Draft</button>
-    <button id="newDraftBtn">Clear Form</button>
-    <button id="pdfAllBtn" class="primary">Save Reports as PDF…</button>
-    <button id="pdfSummaryBtn">Save Summary PDF</button>
-    <button id="pdfBtn">This Form Only</button>
   </div>
 
   <div class="paper-wrap">
@@ -411,10 +445,25 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
     Fire Defense Equipment Co., Inc. · 4350 Delemere Blvd, Royal Oak MI 48073 · NFPA 25 ITM Reports<br>
     Prepared by Mitchell Peebles · July 29, 2026
   </footer>
+
+  <!-- permanent save / load / PDF banner, pinned to bottom of screen -->
+  <div class="actionbar" id="actionBar">
+    <span class="saveflag" id="saveFlag">✓ Saved</span>
+    <button id="saveDraftBtn">Save Draft</button>
+    <button id="loadDraftBtn">Load Draft</button>
+    <button id="newDraftBtn">Clear Form</button>
+    <span class="ab-sep"></span>
+    <button id="pdfAllBtn" class="primary">Save Reports as PDF…</button>
+    <button id="pdfSummaryBtn">Save Summary PDF</button>
+    <button id="pdfBtn">This Form Only</button>
+  </div>
 </div>
 
 <!-- password modal (admin unlock / load draft picker host) -->
 <div id="modalHost"></div>
+
+<!-- back-to-top floating button -->
+<button id="backToTop" aria-label="Back to top" title="Back to top">↑</button>
 
 <script>
 
@@ -2432,8 +2481,22 @@ function draftPicker(keys, drafts){
   const users=getUsers();
   if(sess && sess.username){
     if(sess.username===ADMIN_USER) enterApp(ADMIN_USER);
+    else if(rosterLookup(sess.username)) enterApp(sess.username.toLowerCase());
     else if(users[sess.username]) enterApp(sess.username);
   }
+})();
+
+/* ---------- back-to-top floating button ---------- */
+(function(){
+  const btn=document.getElementById('backToTop');
+  if(!btn) return;
+  const onScroll=()=>{
+    if(window.scrollY>300) btn.classList.add('show');
+    else btn.classList.remove('show');
+  };
+  window.addEventListener('scroll', onScroll, {passive:true});
+  btn.addEventListener('click', ()=>{ window.scrollTo({top:0, behavior:'smooth'}); });
+  onScroll();
 })();
 
 </script>
