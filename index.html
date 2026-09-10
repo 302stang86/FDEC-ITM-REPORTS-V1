@@ -194,6 +194,12 @@ button{font-family:inherit}
 .ab-menu-pop button:hover{background:var(--shade)}
 #appScreen{padding-bottom:74px}
 .ad-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-top:4px}
+.ad-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.ad-yearlab{font-size:12.5px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:6px}
+.ad-yearlab select{border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:13px;font-weight:600;color:var(--ink);background:#fff}
+.ad-search{flex:1;min-width:160px;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit}
+.ad-search:focus{outline:none;border-color:var(--navy)}
+.ad-count{font-size:11px;color:var(--muted);padding:8px 2px 2px}
 .ad-tab{background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
 .ad-tab.active{color:var(--navy);border-bottom-color:var(--navy)}
 .ad-table{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -2815,30 +2821,68 @@ async function adminDashboard(){
     }catch(e){ body.innerHTML='<div style="padding:16px;color:#c00">Could not load: '+esc(e.message||String(e))+'</div>'; }
   }
   async function renderReports(){
-    const snap=await FB_DB.collection('reports').orderBy('submittedAt','desc').limit(200).get();
+    const snap=await FB_DB.collection('reports').orderBy('submittedAt','desc').limit(500).get();
     if(snap.empty){ body.innerHTML='<div style="padding:16px;color:#777">No reports have been submitted yet.</div>'; return; }
-    let html='<table class="ad-table"><thead><tr><th>Submitted</th><th>Tech</th><th>Job</th><th>Reports</th><th></th></tr></thead><tbody>';
     const rows=[];
     snap.forEach(d=>{ rows.push({id:d.id, ...d.data()}); });
+    // derive each report's year + a searchable text blob
+    const nowYear=new Date().getFullYear();
     rows.forEach(r=>{
-      const when=r.submittedAt&&r.submittedAt.toDate?r.submittedAt.toDate().toLocaleString():'—';
-      const names=(r.reports||[]).map(id=>{const f=FORMS.find(x=>x.id===id); return f?shortName(f):id;}).join(', ');
-      html+=`<tr>
-        <td>${esc(when)}</td>
-        <td>${esc(r.byName||r.byEmail||'—')}</td>
-        <td>${esc(r.jobName||'—')}${r.jobNumber?(' · '+esc(r.jobNumber)):''}</td>
-        <td style="font-size:11px">${esc(names)}</td>
-        <td style="white-space:nowrap"><button class="ad-view" data-id="${esc(r.id)}">View</button> <button class="ad-dl" data-id="${esc(r.id)}">Download</button></td>
-      </tr>`;
+      const dt=r.submittedAt&&r.submittedAt.toDate?r.submittedAt.toDate():null;
+      r._year = dt?dt.getFullYear():nowYear;
+      r._when = dt?dt.toLocaleString():'—';
+      r._names=(r.reports||[]).map(id=>{const f=FORMS.find(x=>x.id===id); return f?shortName(f):id;}).join(', ');
+      r._search=[r.byName,r.byEmail,r.jobName,r.jobNumber,r._names].filter(Boolean).join(' ').toLowerCase();
     });
-    html+='</tbody></table>';
-    body.innerHTML=html;
-    body.querySelectorAll('.ad-view').forEach(btn=>{
-      btn.onclick=()=>{ const rec=rows.find(x=>x.id===btn.getAttribute('data-id')); viewCloudReport(rec, close); };
-    });
-    body.querySelectorAll('.ad-dl').forEach(btn=>{
-      btn.onclick=()=>{ const rec=rows.find(x=>x.id===btn.getAttribute('data-id')); downloadCloudReport(rec); };
-    });
+    // available years, newest first; default to current year (or newest with data)
+    const years=[...new Set(rows.map(r=>r._year))].sort((a,b)=>b-a);
+    let selYear = years.includes(nowYear)?nowYear:years[0];
+    let query='';
+    // controls
+    let yrOpts=years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    body.innerHTML=`
+      <div class="ad-controls">
+        <label class="ad-yearlab">Year:
+          <select id="adYear">${yrOpts}</select>
+        </label>
+        <input id="adSearch" class="ad-search" placeholder="Search tech, job, or report type…">
+      </div>
+      <div id="adReportList"></div>`;
+    const yearSel=body.querySelector('#adYear');
+    const searchBox=body.querySelector('#adSearch');
+    yearSel.value=String(selYear);
+    const listEl=body.querySelector('#adReportList');
+    function draw(){
+      const y=parseInt(yearSel.value,10);
+      const q=(searchBox.value||'').trim().toLowerCase();
+      const filtered=rows.filter(r=> r._year===y && (!q || r._search.includes(q)));
+      if(filtered.length===0){
+        listEl.innerHTML='<div style="padding:16px;color:#777">No reports'+(q?' match your search':'')+' for '+y+'.</div>';
+        return;
+      }
+      let html='<table class="ad-table"><thead><tr><th>Submitted</th><th>Tech</th><th>Job</th><th>Reports</th><th></th></tr></thead><tbody>';
+      filtered.forEach(r=>{
+        html+=`<tr>
+          <td>${esc(r._when)}</td>
+          <td>${esc(r.byName||r.byEmail||'—')}</td>
+          <td>${esc(r.jobName||'—')}${r.jobNumber?(' · '+esc(r.jobNumber)):''}</td>
+          <td style="font-size:11px">${esc(r._names)}</td>
+          <td style="white-space:nowrap"><button class="ad-view" data-id="${esc(r.id)}">View</button> <button class="ad-dl" data-id="${esc(r.id)}">Download</button></td>
+        </tr>`;
+      });
+      html+='</tbody></table>';
+      html+='<div class="ad-count">'+filtered.length+' report'+(filtered.length===1?'':'s')+' · '+y+(q?' · matching "'+esc(q)+'"':'')+'</div>';
+      listEl.innerHTML=html;
+      listEl.querySelectorAll('.ad-view').forEach(btn=>{
+        btn.onclick=()=>{ const rec=rows.find(x=>x.id===btn.getAttribute('data-id')); viewCloudReport(rec, close); };
+      });
+      listEl.querySelectorAll('.ad-dl').forEach(btn=>{
+        btn.onclick=()=>{ const rec=rows.find(x=>x.id===btn.getAttribute('data-id')); downloadCloudReport(rec); };
+      });
+    }
+    yearSel.onchange=draw;
+    searchBox.oninput=draw;
+    draw();
   }
   async function renderUsers(){
     const snap=await FB_DB.collection('users').orderBy('email').get();
