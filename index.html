@@ -308,6 +308,7 @@ textarea.fin{border:1px solid var(--line);border-radius:5px;width:100%;min-heigh
 .defrow.defrow-pick{grid-template-columns:70px 1fr 150px}
 .defpick{border:1px solid var(--line);border-radius:5px;padding:5px 4px;font-size:12px;background:#f5f8fd;color:var(--navy);font-weight:600;max-width:70px}
 .defpick:focus{outline:none;border-color:var(--navy)}
+.defpick-print{display:none}
 .defpick-type{border:1px solid var(--line);border-radius:5px;padding:4px 6px;font-size:12px;background:#fff;color:var(--ink);margin-left:4px}
 .defpick-type:focus{outline:none;border-color:var(--navy)}
 @media(max-width:640px){ .defrow.defrow-pick{grid-template-columns:56px 1fr;gap:6px} .defrow.defrow-pick select:last-child{grid-column:1/-1} }
@@ -370,7 +371,8 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
 @media print{
   .topbar,.tabs,.toolbar,footer,.no-print{display:none!important}
   .defadd,.add-instance,.add-instance-wrap,.addsys,.addsys-sel,.inst-remove,.riser-btns,.defpick{display:none!important}
-  .defrow.defrow-pick{grid-template-columns:1fr 150px!important}
+  .defpick-print{display:flex!important;align-items:center;justify-content:center;font-weight:700;color:var(--navy);font-size:11px}
+  .defrow.defrow-pick{grid-template-columns:34px 1fr 150px!important}
   .paper-wrap{padding:0;display:block}
   .paper{box-shadow:none;border:none;max-width:none;border-radius:0;padding:0;margin:0;width:100%}
   .form.print-hide{display:none!important}
@@ -1983,9 +1985,14 @@ function deficiencyBlock(sec){
         o.textContent=pi.n; pick.appendChild(o); });
       const optCustom=document.createElement('option'); optCustom.value='__custom'; optCustom.textContent='Custom / other'; pick.appendChild(optCustom);
       pick.value = r.n!=null?String(r.n):'';
+      // print-only label so the selected item number stays visible on submitted/printed reports
+      const pnum=document.createElement('span'); pnum.className='defpick-print';
+      const setPnum=(v)=>{ pnum.textContent = (v && v!=='__custom' && v!=='') ? ('#'+v) : ''; };
+      setPnum(pick.value);
       const ci=document.createElement('input'); ci.className='fin grow'; ci.value=r.c||''; ci.placeholder='Comment / deficiency';
       ci.oninput=()=>{ r.c=ci.value; setVal(sec.deficiency,arr); flash(); };
       pick.onchange=()=>{
+        setPnum(pick.value);
         if(pick.value==='__custom'){ r.n='__custom'; ci.focus(); setVal(sec.deficiency,arr); flash(); return; }
         if(pick.value===''){ r.n=undefined; setVal(sec.deficiency,arr); flash(); return; }
         const hit=pickItems.find(pi=>pi.n===pick.value);
@@ -1993,7 +2000,7 @@ function deficiencyBlock(sec){
       };
       const sel=document.createElement('select'); DEF_TYPES.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t||'—';sel.appendChild(o);});
       sel.value=r.t||''; sel.onchange=()=>{ r.t=sel.value; setVal(sec.deficiency,arr); flash(); };
-      row.appendChild(pick); row.appendChild(ci); row.appendChild(sel); rowsWrap.appendChild(row);
+      row.appendChild(pick); row.appendChild(pnum); row.appendChild(ci); row.appendChild(sel); rowsWrap.appendChild(row);
     });
   }
   draw();
@@ -2271,14 +2278,14 @@ function deficiencySections(fid){
     for(let k=1;k<=count;k++){
       const inst=f.repeatable.build('inst'+k);
       const label=inst.groupTitle+(count>1?(' #'+k):'');
-      if(inst.deficiency) out.push({name:label, key:inst.deficiency});
+      if(inst.deficiency) out.push({name:label, key:inst.deficiency, items:inst.items||[]});
     }
-    if(f.post && f.postDeficiency) out.push({name:'Post Inspection', key:f.postDeficiency});
+    if(f.post && f.postDeficiency) out.push({name:'Post Inspection', key:f.postDeficiency, items:f.post||[]});
   } else if(f.sections){
-    f.sections.forEach(sec=>{ if(sec.deficiency) out.push({name:sec.name, key:sec.deficiency}); });
+    f.sections.forEach(sec=>{ if(sec.deficiency) out.push({name:sec.name, key:sec.deficiency, items:sec.items||[]}); });
   }
   // FD-25 comments field (single free-text)
-  if(f.id==='fd25') out.push({name:'Additional Comments', key:'fd25_comments', freeText:true});
+  if(f.id==='fd25') out.push({name:'Additional Comments', key:'fd25_comments', freeText:true, items:[]});
   return out;
 }
 
@@ -2312,7 +2319,7 @@ function collectSummary(){
     deficiencySections(fid).forEach(sec=>{
       const raw=store[sec.key];
       if(sec.freeText){
-        if(raw && String(raw).trim()) entries.push({section:sec.name, comment:String(raw).trim(), type:''});
+        if(raw && String(raw).trim()) entries.push({section:sec.name, item:sec.name, comment:String(raw).trim(), type:''});
         return;
       }
       let arr=raw;
@@ -2324,7 +2331,15 @@ function collectSummary(){
           if(!comment && !type) return;
           // Exclude informational lines: 'Comment' and 'Recommendation' are not deficiencies.
           if(type==='Comment' || type==='Recommendation') return;
-          entries.push({section:sec.name, comment, type});
+          // Build the "N - item text" label from the selected dropdown number.
+          let itemLabel=sec.name;
+          if(r.n!=null && r.n!=='' && r.n!=='__custom'){
+            const hit=(sec.items||[]).find(it=>String(it.n)===String(r.n));
+            itemLabel = hit ? (r.n+' - '+hit.text) : String(r.n);
+          } else if(r.n==='__custom'){
+            itemLabel = 'Custom';
+          }
+          entries.push({section:sec.name, item:itemLabel, comment, type});
         });
       }
     });
@@ -2340,7 +2355,7 @@ function collectSummary(){
           const type=String(store[base+'_deftype']||'').trim();
           if(type==='Comment' || type==='Recommendation') return;
           if(why || type){
-            entries.push({section:'Item '+it.n, comment:why||it.text, type});
+            entries.push({section:'Item '+it.n, item:(it.n+' - '+it.text), comment:why||it.text, type});
           }
         }
       });
@@ -2388,11 +2403,11 @@ function buildSummaryPaper(){
 
     const table=document.createElement('div'); table.className='summary-table';
     const th=document.createElement('div'); th.className='summary-row summary-th';
-    th.innerHTML='<div>Section</div><div>Comment / Deficiency</div><div>Type</div>';
+    th.innerHTML='<div>Item</div><div>Comment / Deficiency</div><div>Type</div>';
     table.appendChild(th);
     rep.entries.forEach(e=>{
       const r=document.createElement('div'); r.className='summary-row';
-      const sd=document.createElement('div'); sd.textContent=e.section;
+      const sd=document.createElement('div'); sd.textContent=e.item||e.section;
       const cd=document.createElement('div'); cd.textContent=e.comment||'—';
       const td=document.createElement('div'); td.className='summary-type'; td.textContent=e.type||'—';
       r.appendChild(sd); r.appendChild(cd); r.appendChild(td);
@@ -2867,7 +2882,7 @@ async function adminDashboard(){
           <td>${esc(r.byName||r.byEmail||'—')}</td>
           <td>${esc(r.jobName||'—')}${r.jobNumber?(' · '+esc(r.jobNumber)):''}</td>
           <td style="font-size:11px">${esc(r._names)}</td>
-          <td style="white-space:nowrap"><button class="ad-view" data-id="${esc(r.id)}">View</button> <button class="ad-dl" data-id="${esc(r.id)}">Download</button></td>
+          <td style="white-space:nowrap"><button class="ad-view" data-id="${esc(r.id)}">View</button> <button class="ad-dl" data-id="${esc(r.id)}">Download</button> <button class="ad-del" data-id="${esc(r.id)}" data-label="${esc((r.jobName||'report')+' — '+(r.byName||r.byEmail||''))}">Delete</button></td>
         </tr>`;
       });
       html+='</tbody></table>';
@@ -2878,6 +2893,21 @@ async function adminDashboard(){
       });
       listEl.querySelectorAll('.ad-dl').forEach(btn=>{
         btn.onclick=()=>{ const rec=rows.find(x=>x.id===btn.getAttribute('data-id')); downloadCloudReport(rec); };
+      });
+      listEl.querySelectorAll('.ad-del').forEach(btn=>{
+        btn.onclick=async ()=>{
+          const id=btn.getAttribute('data-id');
+          const label=btn.getAttribute('data-label')||'this report';
+          if(!confirm('Delete this submitted report?\n\n'+label+'\n\nThis permanently removes it from the office records and cannot be undone.')) return;
+          btn.disabled=true; btn.textContent='Deleting…';
+          try{
+            await FB_DB.collection('reports').doc(id).delete();
+            // remove from local list and redraw
+            const idx=rows.findIndex(x=>x.id===id);
+            if(idx>=0) rows.splice(idx,1);
+            draw();
+          }catch(e){ alert('Delete failed: '+(e.message||e)); btn.disabled=false; btn.textContent='Delete'; }
+        };
       });
     }
     yearSel.onchange=draw;
