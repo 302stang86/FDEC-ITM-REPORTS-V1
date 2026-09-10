@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FDEC ITM">
@@ -99,6 +99,10 @@ button{font-family:inherit}
 .correction-list .item{grid-template-columns:34px 1fr}
 .correction-list .item .txt{padding:6px 10px}
 .rp-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer}
+.dw-row{padding:9px 12px;border-bottom:1px solid var(--line2)}
+.dw-row:last-child{border-bottom:none}
+.dw-loc{font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.3px}
+.dw-cmt{font-size:13px;color:var(--ink);margin-top:2px}
 .rp-row:hover{background:var(--shade)}
 .rp-row .rp-cb,.rp-summary input{width:17px;height:17px;cursor:pointer}
 .rp-code{font-weight:700;color:var(--navy);min-width:58px;font-size:12px}
@@ -278,6 +282,8 @@ textarea.fin{border:1px solid var(--line);border-radius:5px;width:100%;min-heigh
 .defrow.defrow-pick{grid-template-columns:70px 1fr 150px}
 .defpick{border:1px solid var(--line);border-radius:5px;padding:5px 4px;font-size:12px;background:#f5f8fd;color:var(--navy);font-weight:600;max-width:70px}
 .defpick:focus{outline:none;border-color:var(--navy)}
+.defpick-type{border:1px solid var(--line);border-radius:5px;padding:4px 6px;font-size:12px;background:#fff;color:var(--ink);margin-left:4px}
+.defpick-type:focus{outline:none;border-color:var(--navy)}
 @media(max-width:640px){ .defrow.defrow-pick{grid-template-columns:56px 1fr;gap:6px} .defrow.defrow-pick select:last-child{grid-column:1/-1} }
 .defrow select{border:1px solid var(--line);border-radius:5px;padding:5px;font-size:12px}
 .defadd{background:#fff;border:1px dashed var(--line);color:var(--navy);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
@@ -475,7 +481,7 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
     <span class="saveflag" id="saveFlag">✓ Saved</span>
     <button id="saveDraftBtn">Save Draft</button>
     <button id="loadDraftBtn">Load Draft</button>
-    <button id="pdfAllBtn" class="primary">Save PDF…</button>
+    <button id="pdfAllBtn" class="primary">Submit Report</button>
     <div class="ab-menu">
       <button id="abMenuBtn" aria-label="More options" title="More">⋮</button>
       <div class="ab-menu-pop" id="abMenuPop">
@@ -666,9 +672,9 @@ const FD25 = {
       {n:2, text:"FDC piping hydrostatically tested at:", type:"hydro_row"},
       {n:3, text:"Do you certify as the sprinkler contractor that additives and corrosive chemicals, sodium silicate or derivatives of sodium silicate, brine, or other corrosive chemicals were not used for testing systems or stopping leaks?", type:"yn"},
       {n:4, text:"Valve Status Test performed after FDC hydrostatic testing completed:", type:"yn_why"},
-      {n:5, text:"Sprinkler system restored to full service and all pertinent parties notified after testing:", type:"yn_why"},
-      {n:6, text:"FDC piping and fittings showed no signs of leaks or loss of pressure during the FDC hydrostatic testing:", type:"yn_why"},
-      {n:7, text:"After testing all Blank discs, Blind gaskets and Testing equipment is removed and piping properly reconnected:", type:"yn_why"}
+      {n:5, text:"Sprinkler system restored to full service and all pertinent parties notified after testing:", type:"yn_why", defType:true},
+      {n:6, text:"FDC piping and fittings showed no signs of leaks or loss of pressure during the FDC hydrostatic testing:", type:"yn_why", defType:true},
+      {n:7, text:"After testing all Blank discs, Blind gaskets and Testing equipment is removed and piping properly reconnected:", type:"yn_why", defType:true}
     ], comments:"fd25_comments"}
   ],
   passLabel: "5 Year FDC & Piping Hydrostatic Testing Passed:",
@@ -727,10 +733,10 @@ const FD20 = {
       {n:8, text:"Control valves and system associated valves are in normal position or are locked or sealed.", type:"check"},
       {n:9, text:"Tamper switch, Pressure switch, Waterflow switch and associated devices show no signs of damage/missing components.", type:"check"},
       {n:10, text:"Water gong, retard chamber and associated system mechanical devices show no signs of leaks, damage/missing components.", type:"check"},
-      {n:11, text:"Mechanical alarm devices tested and operated properly (water motor gong).", type:"wftimes"},
+      {n:11, text:"Mechanical alarm devices tested and operated properly (water motor gong).", type:"risers"},
       {n:12, text:"Water pressure gauges are operable, show no signs of leaks, damage, missing components and water supply pressure is normal.", type:"check"},
       {n:13, text:"Air/nitrogen pressure gauges are operable, show no signs of leaks, damage, missing components and air/nitrogen pressure is normal.", type:"check"},
-      {n:14, text:"Low air alarm operated properly.", type:"check_psi", fid:"fd20_lowair"},
+      {n:14, text:"Low air alarm operated properly. (Dry System)", type:"check_psi", fid:"fd20_lowair"},
       {n:15, text:"At time of report, Riser Room was above 40° F", type:"check"},
       {n:16, text:"FDC visible, not damaged, swivels & clapper operate smoothly, gaskets & caps in-place, interior of connection inspected.", type:"check"}
     ], compliance:"c_7_16", deficiency:"d_7_16"},
@@ -773,9 +779,9 @@ const FD21 = {
       {n:8, text:"Control valves and system associated valves are in normal position or are locked or sealed.", type:"check"},
       {n:9, text:"Tamper switch, Pressure switch, Waterflow switch and associated devices show no signs of damage/missing components.", type:"check"},
       {n:10, text:"Water gong, retard chamber and associated system mechanical devices show no signs of leaks, damage/missing components.", type:"check"},
-      {n:11, text:"Vane, paddle & pressure alarm devices tested & operated properly.", type:"check"},
+      {n:11, text:"Vane, paddle & pressure alarm devices tested & operated properly.", type:"risers"},
       {n:12, text:"Valve tamper switches tested and operated properly.", type:"check"},
-      {n:13, text:"Low air alarm operated properly.", type:"check_psi", fid:"fd21_lowair"},
+      {n:13, text:"Low air alarm operated properly. (Dry System)", type:"check_psi", fid:"fd21_lowair"},
       {n:14, text:"At time of report, Riser Room was above 40° F", type:"check"},
       {n:15, text:"Water pressure gauges are operable, show no signs of leaks, damage, missing components and water supply pressure is normal.", type:"check"},
       {n:16, text:"Air/nitrogen pressure gauges are operable, show no signs of leaks, damage, missing components and air/nitrogen pressure is normal.", type:"check"},
@@ -1064,7 +1070,8 @@ const FORMS = CORE_FORMS.concat(ADDON_FORMS);
 const LS = {
   users:  'fdec_itm_users',
   session:'fdec_itm_session',
-  drafts: 'fdec_itm_drafts'      // {draftName: {form, values, savedAt, by}}
+  drafts: 'fdec_itm_drafts',     // {draftName: {form, values, savedAt, by}}
+  autosave:'fdec_itm_autosave'   // {allValues, added, form, savedAt} — silent crash-recovery snapshot
 };
 const ADMIN_USER = '';  // admin credentials removed (open build)
 const ADMIN_PASS = '';
@@ -1099,6 +1106,34 @@ function setSession(s){ if(s) localStorage.setItem(LS.session, JSON.stringify(s)
 /* ---------- drafts store ---------- */
 function getDrafts(){ try{return JSON.parse(localStorage.getItem(LS.drafts))||{}}catch{return {}} }
 function setDrafts(d){ localStorage.setItem(LS.drafts, JSON.stringify(d)); }
+
+/* ---------- Auto-recovery (silent background snapshot) ---------- */
+function hasAnyData(){
+  // true if ALLVALUES holds any non-empty value in any form or shared store
+  for(const fk in ALLVALUES){
+    const store=ALLVALUES[fk]; if(!store) continue;
+    for(const k in store){ const v=store[k]; if(v!=null && v!=='' && v!==false){ return true; } }
+  }
+  return (ADDED && ADDED.length>0);
+}
+function writeAutosave(){
+  try{
+    if(!hasAnyData()){ return; }   // nothing worth saving yet
+    const snap={ allValues:ALLVALUES, added:(ADDED||[]).slice(), form:ACTIVE_FORM, savedAt:new Date().toISOString() };
+    localStorage.setItem(LS.autosave, JSON.stringify(snap));
+  }catch(e){ /* storage full or unavailable — ignore */ }
+}
+function getAutosave(){ try{return JSON.parse(localStorage.getItem(LS.autosave))}catch{return null} }
+function clearAutosave(){ try{ localStorage.removeItem(LS.autosave); }catch{} }
+let AUTOSAVE_TIMER=null;
+function startAutosave(){
+  if(AUTOSAVE_TIMER) return;
+  // Save every 20s, but only when there are unsaved changes.
+  AUTOSAVE_TIMER=setInterval(()=>{ if(typeof DIRTY!=='undefined' && DIRTY){ writeAutosave(); } }, 20000);
+  // Also snapshot on tab hide / close as a safety net.
+  window.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden' && DIRTY) writeAutosave(); });
+  window.addEventListener('pagehide', ()=>{ if(DIRTY) writeAutosave(); });
+}
 
 /* ---------- auth UI ---------- */
 const authScreen=document.getElementById('authScreen');
@@ -1208,8 +1243,49 @@ function enterOpenMode(){
   buildTabs();
   renderForm(ACTIVE_FORM);
   updateLockPill();
+  startAutosave();
+  maybeOfferRecovery();
 }
 
+/* On startup, if a crash-recovery snapshot exists with real content, offer to restore it. */
+function maybeOfferRecovery(){
+  const snap=getAutosave();
+  if(!snap || !snap.allValues) return;
+  // Only offer if the snapshot actually holds data.
+  let has=false;
+  for(const fk in snap.allValues){ const st=snap.allValues[fk]; if(!st) continue;
+    for(const k in st){ const v=st[k]; if(v!=null && v!=='' && v!==false){ has=true; break; } } if(has) break; }
+  if(!has && !(snap.added&&snap.added.length)) { clearAutosave(); return; }
+  const when = snap.savedAt ? new Date(snap.savedAt) : null;
+  const whenStr = when ? when.toLocaleString() : 'a previous session';
+  const mh=document.getElementById('modalHost')||document.body;
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  bg.innerHTML=`<div class="modal" style="max-width:460px">
+    <h3>Recover Unsaved Work?</h3>
+    <p>It looks like the app closed with unsaved changes from ${esc(whenStr)}. Would you like to restore that work?</p>
+    <div class="mbtns">
+      <button id="recDiscard">Discard</button>
+      <button id="recRestore" class="primary">Restore</button>
+    </div></div>`;
+  mh.appendChild(bg);
+  const close=()=>{ if(bg.parentNode) mh.removeChild(bg); };
+  bg.querySelector('#recRestore').onclick=()=>{
+    try{
+      ALLVALUES=JSON.parse(JSON.stringify(snap.allValues||{}));
+      ADDED=Array.isArray(snap.added)?snap.added.slice():[];
+      const special=(snap.form==='__summary');
+      ACTIVE_FORM = special ? snap.form : ((snap.form && FORMS.some(f=>f.id===snap.form))?snap.form:'fd17');
+      loadFormValues(special?'fd17':ACTIVE_FORM);
+      DIRTY=true;   // restored work is unsaved until they save a draft
+      buildTabs();
+      if(ACTIVE_FORM==='__summary') renderSummary(); else renderForm(ACTIVE_FORM);
+    }catch(e){}
+    close();
+  };
+  bg.querySelector('#recDiscard').onclick=()=>{ clearAutosave(); close(); };
+}
+
+function upX(){}  // placeholder removed marker
 function updateLockPill(){
   const pill=document.getElementById('lockPill');
   const btn=document.getElementById('adminToggle');
@@ -1476,6 +1552,116 @@ function formHasData(fid){
 }
 
 /* Report-selection modal shown before creating a combined PDF. */
+/* Before submitting: find (1) deficiency rows with text but no type, and
+   (2) compliance blocks where neither box is checked. Only forms that have
+   been worked on (any data entered) are checked, so untouched forms don't spam. */
+function validateDeficiencyTypes(){
+  const order=CORE_FORMS.map(f=>f.id).concat(ADDED.slice());
+  const problems=[];
+  order.forEach(fid=>{
+    const f=FORMS.find(x=>x.id===fid); if(!f) return;
+    const store=ALLVALUES[fid]||{};
+    // Deficiency rows: text present but no type selected.
+    deficiencySections(fid).forEach(sec=>{
+      if(sec.freeText) return;
+      let arr=store[sec.key];
+      if(typeof arr==='string'){ try{arr=JSON.parse(arr);}catch{arr=[];} }
+      if(Array.isArray(arr)){
+        arr.forEach(r=>{
+          if(!r) return;
+          const comment=String(r.c||'').trim();
+          const type=String(r.t||'').trim();
+          if(comment && !type){
+            problems.push({ form:shortName(f), section:sec.name, comment, kind:'type' });
+          }
+        });
+      }
+    });
+    // Compliance blocks: neither box checked. Only on forms with some data.
+    if(formHasData(fid)){
+      complianceSections(fid).forEach(cs=>{
+        const ok=store[cs.key+'_ok']===true;
+        const exc=store[cs.key+'_exc']===true;
+        if(!ok && !exc){
+          problems.push({ form:shortName(f), section:cs.name, comment:'Compliance not marked (select one of the two boxes)', kind:'compliance' });
+        }
+        // "Compliant, except as listed below" requires at least one deficiency/comment listed.
+        if(exc && cs.defKey){
+          let arr=store[cs.defKey];
+          if(typeof arr==='string'){ try{arr=JSON.parse(arr);}catch{arr=[];} }
+          const hasEntry=Array.isArray(arr) && arr.some(r=>r && String(r.c||'').trim());
+          if(!hasEntry){
+            problems.push({ form:shortName(f), section:cs.name, comment:'"Compliant, except as listed below" is checked \u2014 list at least one deficiency or comment', kind:'exc_empty' });
+          }
+        }
+      });
+    }
+    // FD-24 (grid) & FD-25 (yn/yn_why): if "No" is selected, a comment is required.
+    if(fid==='fd24'){
+      const sec=f.sections[0];
+      sec.items.forEach(it=>{
+        const base='fd24_i'+it.n;
+        if(store[base+'_no']===true && !String(store[base+'_cmt']||'').trim()){
+          problems.push({ form:shortName(f), section:'Item '+it.n, comment:'"No" selected — a comment is required: '+it.text.slice(0,70), kind:'no_comment' });
+        }
+      });
+    }
+    if(fid==='fd25'){
+      const sec=f.sections[0];
+      const formComments=String(store['fd25_comments']||'').trim();
+      sec.items.forEach(it=>{
+        if(it.type!=='yn' && it.type!=='yn_why') return;
+        const base='fd25_i'+it.n;
+        if(store[base+'_no']===true){
+          // yn_why items have their own "If No, why?" field; yn items fall back to the form comments box.
+          const why=String(store[base+'_why']||'').trim();
+          const hasComment = (it.type==='yn_why') ? (why || formComments) : formComments;
+          if(!hasComment){
+            problems.push({ form:shortName(f), section:'Item '+it.n, comment:'"No" selected — a comment is required: '+it.text.slice(0,70), kind:'no_comment' });
+          }
+        }
+      });
+    }
+    // Additional NFPA Required Inspections: if N/A is not checked, require Date or By.
+    if(formHasData(fid) && f.sections){
+      f.sections.forEach(sec=>{
+        (sec.items||[]).forEach(it=>{
+          if(it.type!=='check_dates') return;
+          const base=fid+'_i'+it.n;
+          const na=store[base+'_na']===true;
+          const date=String(store[it.dateId]||'').trim();
+          const by=String(store[it.byId]||'').trim();
+          if(!na && !date && !by){
+            problems.push({ form:shortName(f), section:sec.name+' — Item '+it.n,
+              comment:'Mark N/A, or enter a Date and By: '+it.text.slice(0,60), kind:'nfpa_dates' });
+          }
+        });
+      });
+    }
+  });
+  return problems;
+}
+
+/* Modal that lists deficiency rows missing a type, and lets the user jump to fix. */
+function deficiencyWarningModal(problems){
+  const mh=document.getElementById('modalHost')||document.body;
+  const bg=document.createElement('div'); bg.className='modal-bg';
+  let rows='';
+  problems.forEach(p=>{
+    rows+=`<div class="dw-row">
+      <div class="dw-loc">${esc(p.form)} — ${esc(p.section)}</div>
+      <div class="dw-cmt">${esc(p.comment||'(no comment text)')}</div>
+    </div>`;
+  });
+  bg.innerHTML=`<div class="modal" style="max-width:540px">
+    <h3>Review Needed Before Submitting</h3>
+    <p>${problems.length} item${problems.length===1?'':'s'} need${problems.length===1?'s':''} attention. Resolve the following, then submit again:</p>
+    <div style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:8px">${rows}</div>
+    <div class="mbtns"><button id="dwOk" class="primary">OK</button></div></div>`;
+  mh.appendChild(bg);
+  bg.querySelector('#dwOk').onclick=()=>{ if(bg.parentNode) mh.removeChild(bg); };
+}
+
 function reportPickerModal(){
   const ids=CORE_FORMS.map(f=>f.id).concat(ADDED.slice());
   const mh=document.getElementById('modalHost')||document.body;
@@ -1486,16 +1672,15 @@ function reportPickerModal(){
     const checked=formHasData(id)?'checked':'';
     rows+=`<label class="rp-row">
       <input type="checkbox" class="rp-cb" data-id="${id}" ${checked}>
-      <span class="rp-code">${esc(f.code)}</span>
       <span class="rp-name">${esc(shortName(f))}</span>
       ${formHasData(id)?'<span class="rp-tag">has entries</span>':''}
     </label>`;
   });
   const hasSummary=collectSummary().length>0;
   const curForm=(ACTIVE_FORM!=='__summary' && FORMS.find(f=>f.id===ACTIVE_FORM))?FORMS.find(f=>f.id===ACTIVE_FORM):null;
-  const curLine = curForm ? `<button id="rpCurrent" class="rp-link">Just the current form (${esc(curForm.code)})</button>` : '';
+  const curLine = curForm ? `<button id="rpCurrent" class="rp-link">Just the current form (${esc(shortName(curForm))})</button>` : '';
   bg.innerHTML=`<div class="modal" style="max-width:520px">
-    <h3>Save PDF</h3>
+    <h3>Submit Report</h3>
     <p>Choose which reports to include. Reports with entries are pre-selected.</p>
     <div style="max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px 4px">${rows}</div>
     <label class="rp-row rp-summary" style="margin-top:8px;${hasSummary?'':'opacity:.5'}">
@@ -1509,7 +1694,7 @@ function reportPickerModal(){
     </div>
     <div class="mbtns">
       <button id="rpCancel">Cancel</button>
-      <button id="rpCreate" class="primary">Create PDF</button>
+      <button id="rpCreate" class="primary">Submit</button>
     </div></div>`;
   mh.appendChild(bg);
   const close=()=>mh.removeChild(bg);
@@ -1717,7 +1902,7 @@ function deficiencyBlock(sec){
         if(pick.value==='__custom'){ r.n='__custom'; ci.focus(); setVal(sec.deficiency,arr); flash(); return; }
         if(pick.value===''){ r.n=undefined; setVal(sec.deficiency,arr); flash(); return; }
         const hit=pickItems.find(pi=>pi.n===pick.value);
-        if(hit){ r.n=hit.n; r.c=hit.text; ci.value=hit.text; setVal(sec.deficiency,arr); flash(); }
+        if(hit){ r.n=hit.n; ci.focus(); setVal(sec.deficiency,arr); flash(); }
       };
       const sel=document.createElement('select'); DEF_TYPES.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t||'—';sel.appendChild(o);});
       sel.value=r.t||''; sel.onchange=()=>{ r.t=sel.value; setVal(sec.deficiency,arr); flash(); };
@@ -1734,12 +1919,24 @@ function deficiencyBlock(sec){
 
 function complianceBlock(sec){
   const c=document.createElement('div'); c.className='compliance';
+  const okId=sec.compliance+'_ok';
+  const excId=sec.compliance+'_exc';
   const a=document.createElement('div'); a.className='cc';
-  a.appendChild(xbox(sec.compliance+'_ok'));
+  const okBox=xbox(okId);
+  a.appendChild(okBox);
   const al=document.createElement('span'); al.textContent='The above components are Compliant'; a.appendChild(al);
   const b=document.createElement('div'); b.className='cc exc';
-  b.appendChild(xbox(sec.compliance+'_exc'));
+  const excBox=xbox(excId);
+  b.appendChild(excBox);
   const bl=document.createElement('span'); bl.textContent='Compliant, except as listed below'; b.appendChild(bl);
+  // Mutually exclusive: turning one on clears the other.
+  const clearPeer=(peerId, peerBox)=>{
+    if(val(peerId)){ setVal(peerId,false); peerBox.classList.remove('on'); peerBox.setAttribute('aria-checked','false'); }
+  };
+  okBox.addEventListener('click', ()=>{ if(val(okId)) clearPeer(excId, excBox); });
+  excBox.addEventListener('click', ()=>{ if(val(excId)) clearPeer(okId, okBox); });
+  okBox.addEventListener('keydown', (e)=>{ if((e.key===' '||e.key==='Enter') && val(okId)) clearPeer(excId, excBox); });
+  excBox.addEventListener('keydown', (e)=>{ if((e.key===' '||e.key==='Enter') && val(excId)) clearPeer(okId, okBox); });
   c.appendChild(a); c.appendChild(b);
   return c;
 }
@@ -1998,6 +2195,25 @@ function deficiencySections(fid){
   return out;
 }
 
+/* Enumerate every compliance block (the two-checkbox row) per form, with section names. */
+function complianceSections(fid){
+  const f=FORMS.find(x=>x.id===fid); if(!f) return [];
+  const out=[];
+  if(f.addon){
+    const store=ALLVALUES[fid]||{};
+    const count=Math.max(1, parseInt(store[f.id+'_instances'],10)||1);
+    for(let k=1;k<=count;k++){
+      const inst=f.repeatable.build('inst'+k);
+      const label=inst.groupTitle+(count>1?(' #'+k):'');
+      if(inst.compliance) out.push({name:label, key:inst.compliance, defKey:inst.deficiency});
+    }
+    if(f.post && f.postCompliance) out.push({name:'Post Inspection', key:f.postCompliance, defKey:f.postDeficiency});
+  } else if(f.sections){
+    f.sections.forEach(sec=>{ if(sec.compliance) out.push({name:sec.name, key:sec.compliance, defKey:sec.deficiency}); });
+  }
+  return out;
+}
+
 /* Collect filled entries for every form (in tab order: core + added). */
 function collectSummary(){
   const order=CORE_FORMS.map(f=>f.id).concat(ADDED.slice());
@@ -2025,6 +2241,23 @@ function collectSummary(){
         });
       }
     });
+    // FD-25: items 5,6,7 — when "No" is selected, surface the "If No, why?" text
+    // and its deficiency type on the summary.
+    if(fid==='fd25'){
+      const f25=FORMS.find(x=>x.id==='fd25');
+      (f25.sections[0].items||[]).forEach(it=>{
+        if(!it.defType) return;
+        const base='fd25_i'+it.n;
+        if(store[base+'_no']===true){
+          const why=String(store[base+'_why']||'').trim();
+          const type=String(store[base+'_deftype']||'').trim();
+          if(type==='Comment' || type==='Recommendation') return;
+          if(why || type){
+            entries.push({section:'Item '+it.n, comment:why||it.text, type});
+          }
+        }
+      });
+    }
     if(entries.length) result.push({formId:fid, code:f.code, title:f.title, entries});
   });
   return result;
@@ -2063,7 +2296,7 @@ function buildSummaryPaper(){
   data.forEach(rep=>{
     const block=document.createElement('div'); block.className='summary-report';
     const rt=document.createElement('div'); rt.className='summary-rtitle';
-    rt.textContent=rep.code+' — '+rep.title;
+    rt.textContent=rep.title;
     block.appendChild(rt);
 
     const table=document.createElement('div'); table.className='summary-table';
@@ -2252,9 +2485,9 @@ function renderAddonItem(f,it,pre){
       return frag;
     }
     case 'fieldline':{
-      // full-width single field under the text
-      const full=document.createElement('div'); full.className='fieldrow'; full.style.gridColumn='2/-1';
-      full.appendChild(inputEl(it.fid,{cls:'grow'})); row.appendChild(full); return row;}
+      // single field inline in the control column (same row as the item text)
+      ctrl.appendChild(inputEl(it.fid,{cls:'grow', placeholder:'date / comment'}));
+      break;}
     case 'fieldline2':{
       const full=document.createElement('div'); full.className='fieldrow'; full.style.gridColumn='2/-1';
       const a=document.createElement('span'); a.className='fl'; a.appendChild(inputEl(it.fid,{cls:'wide'})); full.appendChild(a);
@@ -2327,6 +2560,15 @@ function renderFDC(f,paper){
         const wr=document.createElement('div'); wr.className='fieldrow'; wr.style.gridColumn='1/-1';
         wr.innerHTML='<span class="fl"><span class="k">If No, why?</span></span>';
         wr.appendChild(inputEl(base+'_why',{cls:'grow'}));
+        if(it.defType){
+          const dt=document.createElement('span'); dt.className='fl';
+          dt.innerHTML='<span class="k">Deficiency Type:</span>';
+          const sel=document.createElement('select'); sel.className='defpick-type';
+          DEF_TYPES.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t||'—';sel.appendChild(o);});
+          sel.value=val(base+'_deftype')||'';
+          sel.onchange=()=>{ setVal(base+'_deftype', sel.value); flash(); };
+          dt.appendChild(sel); wr.appendChild(dt);
+        }
         items.appendChild(wr);
       }
       return;
@@ -2366,6 +2608,7 @@ document.getElementById('saveDraftBtn').onclick=()=>{
     // 2) downloadable file (browser chooses folder / prompts per settings)
     downloadDraftFile(payload, nm);
     DIRTY=false;
+    clearAutosave();   // work is now safely saved as a named draft
     return null;
   }, {inputValue:suggested.trim()===('—')?'':suggested, okText:'Save'});
 };
@@ -2423,6 +2666,7 @@ document.getElementById('newDraftBtn').onclick=()=>{
   const pop=document.getElementById('abMenuPop'); if(pop) pop.classList.remove('open');
   if(confirm('Clear all entries on this form?\n\nThis cannot be undone. Anything not saved to a draft will be lost. (Saved drafts are not affected.)')){
     ALLVALUES[ACTIVE_FORM]={}; loadFormValues(ACTIVE_FORM); DIRTY=false; renderForm(ACTIVE_FORM);
+    if(hasAnyData()) writeAutosave(); else clearAutosave();
   }
 };
 
@@ -2447,6 +2691,8 @@ window.addEventListener('beforeunload', (e)=>{
    PDF EXPORT  (print to PDF — reliable, no external libs)
 ============================================================================ */
 document.getElementById('pdfAllBtn').onclick=()=>{
+  const problems=validateDeficiencyTypes();
+  if(problems.length){ deficiencyWarningModal(problems); return; }
   reportPickerModal();
 };
 
@@ -2545,7 +2791,8 @@ function draftPicker(keys, drafts){
   keys.sort((a,b)=> new Date(drafts[b].savedAt)-new Date(drafts[a].savedAt));
   keys.forEach(k=>{
     const d=drafts[k]; const nm=k.split(' :: ')[1]||k;
-    const fc=(FORMS.find(x=>x.id===d.form)||{}).code||d.form;
+    const fform=FORMS.find(x=>x.id===d.form);
+    const fc=fform?shortName(fform):(d.form==='__summary'?'Summary':d.form);
     rows+=`<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 6px;border-bottom:1px solid #eee">
       <div><div style="font-weight:600">${esc(nm)} <span style="font-size:10px;background:#eef2f8;color:#1F3864;padding:1px 6px;border-radius:9px;font-weight:700">${esc(fc)}</span></div><div style="font-size:11px;color:#777">${new Date(d.savedAt).toLocaleString()} · ${esc(d.by||'')}</div></div>
       <div style="display:flex;gap:6px">
