@@ -218,6 +218,7 @@ button{font-family:inherit}
 .st-approved{background:#e9f6ec;color:#1a7f37;font-size:11px;font-weight:700;padding:2px 9px;border-radius:9px}
 .st-denied{background:#fdecea;color:var(--red);font-size:11px;font-weight:700;padding:2px 9px;border-radius:9px}
 .ad-pending-note{background:#fff4e5;color:#9a5b00;font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:8px;margin-bottom:10px}
+.ad-subhead{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:18px 2px 8px;border-top:1px solid var(--line);padding-top:12px}
 #pendingBox{text-align:center;max-width:380px;margin:0 auto;padding:10px}
 .ad-del:hover{background:#fdecea}
 .cloud-flash{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(10px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 3px 12px rgba(0,0,0,.25);opacity:0;visibility:hidden;transition:opacity .25s,transform .25s,visibility .25s;z-index:80}
@@ -1338,9 +1339,12 @@ function showPendingScreen(name, status){
   }
   box.classList.remove('hidden');
   const denied = (status==='denied');
-  box.innerHTML = denied
-    ? `<h2 style="color:#c00;margin:0 0 8px">Access Denied</h2>
-       <p style="font-size:14px;color:#444;line-height:1.5">Your account request was not approved. Please contact your administrator if you believe this is a mistake.</p>
+  const restricted = (status==='restricted');
+  box.innerHTML = (denied || restricted)
+    ? `<h2 style="color:#c00;margin:0 0 8px">Access ${restricted?'Restricted':'Denied'}</h2>
+       <p style="font-size:14px;color:#444;line-height:1.5">${restricted
+          ? 'Your account access has been restricted by an administrator. Please contact your administrator to restore access.'
+          : 'Your account request was not approved. Please contact your administrator if you believe this is a mistake.'}</p>
        <button class="btn" id="pendLogout" style="margin-top:12px">Back to sign in</button>`
     : `<h2 style="color:var(--navy);margin:0 0 8px">Waiting for Approval</h2>
        <p style="font-size:14px;color:#444;line-height:1.5">Thanks, ${esc(name||'')}. Your account has been created and is <b>pending administrator approval</b>. You'll be able to sign in and use the app once an admin approves your access.</p>
@@ -2963,18 +2967,22 @@ async function adminDashboard(){
     const snap=await FB_DB.collection('users').orderBy('email').get();
     if(snap.empty){ body.innerHTML='<div style="padding:16px;color:#777">No users registered yet.</div>'; return; }
     const rows=[]; snap.forEach(d=>rows.push({id:d.id, ...d.data()}));
-    // pending users first, then the rest
     const statusOf=(u)=> (u.status||'approved');
-    rows.sort((a,b)=>{
+    // split active vs archived (restricted)
+    const active=rows.filter(u=>statusOf(u)!=='restricted');
+    const archived=rows.filter(u=>statusOf(u)==='restricted');
+    // active: pending first, then alphabetical
+    active.sort((a,b)=>{
       const pa=statusOf(a)==='pending'?0:1, pb=statusOf(b)==='pending'?0:1;
       if(pa!==pb) return pa-pb;
       return (a.email||'').localeCompare(b.email||'');
     });
-    const pendingCount=rows.filter(u=>statusOf(u)==='pending').length;
+    archived.sort((a,b)=>(a.email||'').localeCompare(b.email||''));
+    const pendingCount=active.filter(u=>statusOf(u)==='pending').length;
     let html='';
     if(pendingCount){ html+=`<div class="ad-pending-note">${pendingCount} account${pendingCount===1?'':'s'} awaiting approval</div>`; }
     html+='<table class="ad-table"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Last login</th><th></th></tr></thead><tbody>';
-    rows.forEach(u=>{
+    active.forEach(u=>{
       const last=u.lastLogin&&u.lastLogin.toDate?u.lastLogin.toDate().toLocaleString():'—';
       const isAdm=ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((u.email||'').toLowerCase());
       const st=statusOf(u);
@@ -2985,10 +2993,10 @@ async function adminDashboard(){
         actions=`<button class="ad-approve" data-id="${esc(u.id)}">Approve</button> <button class="ad-deny" data-id="${esc(u.id)}">Deny</button>`;
       } else if(st==='denied'){
         statusBadge='<span class="st-denied">Denied</span>';
-        actions=`<button class="ad-approve" data-id="${esc(u.id)}">Approve</button> <button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Delete</button>`;
+        actions=`<button class="ad-approve" data-id="${esc(u.id)}">Approve</button> <button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Restrict</button>`;
       } else {
         statusBadge='<span class="st-approved">Approved</span>';
-        actions=`<button class="ad-deny" data-id="${esc(u.id)}">Revoke</button> <button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Delete</button>`;
+        actions=`<button class="ad-deny" data-id="${esc(u.id)}">Revoke</button> <button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Restrict</button>`;
       }
       html+=`<tr>
         <td>${esc(u.name||'—')}</td>
@@ -2999,10 +3007,29 @@ async function adminDashboard(){
       </tr>`;
     });
     html+='</tbody></table>';
+    // archived / restricted section
+    if(archived.length){
+      html+=`<div class="ad-subhead">Archived / Restricted Users (${archived.length})</div>`;
+      html+='<table class="ad-table"><thead><tr><th>Name</th><th>Email</th><th>Restricted</th><th></th></tr></thead><tbody>';
+      archived.forEach(u=>{
+        const when=u.restrictedAt&&u.restrictedAt.toDate?u.restrictedAt.toDate().toLocaleString():'—';
+        html+=`<tr>
+          <td>${esc(u.name||'—')}</td>
+          <td>${esc(u.email||'—')}</td>
+          <td>${esc(when)}</td>
+          <td style="white-space:nowrap"><button class="ad-approve" data-id="${esc(u.id)}">Reactivate</button></td>
+        </tr>`;
+      });
+      html+='</tbody></table>';
+    }
     body.innerHTML=html;
     async function setStatus(id, status){
-      try{ await FB_DB.collection('users').doc(id).set({status}, {merge:true}); renderUsers(); }
-      catch(e){ alert('Update failed: '+(e.message||e)); }
+      try{
+        const patch={status};
+        if(status==='approved'){ patch.restrictedAt=firebase.firestore.FieldValue.delete(); }
+        await FB_DB.collection('users').doc(id).set(patch, {merge:true});
+        renderUsers();
+      }catch(e){ alert('Update failed: '+(e.message||e)); }
     }
     body.querySelectorAll('.ad-approve').forEach(btn=> btn.onclick=()=>setStatus(btn.getAttribute('data-id'),'approved'));
     body.querySelectorAll('.ad-deny').forEach(btn=> btn.onclick=()=>{
@@ -3011,18 +3038,20 @@ async function adminDashboard(){
     body.querySelectorAll('.ad-del').forEach(btn=>{
       btn.onclick=async ()=>{
         const email=btn.getAttribute('data-email');
-        if(!confirm('Delete '+email+'?\n\nThis removes their profile and blocks their access. Their submitted reports remain on file. (You can also remove the leftover login from the Firebase console.)')) return;
+        if(!confirm('Restrict '+email+'?\n\nThis blocks their access and moves them to the Archived list. Their submitted reports stay on file, and you can reactivate them later.')) return;
         try{
-          // mark as deleted (blocks login via security rules / app check) and remove profile data
-          await FB_DB.collection('users').doc(btn.getAttribute('data-id')).delete();
-          await FB_DB.collection('deleted_users').doc(email.toLowerCase()).set({ email:email.toLowerCase(), deletedAt:firebase.firestore.FieldValue.serverTimestamp() });
+          await FB_DB.collection('users').doc(btn.getAttribute('data-id')).set({
+            status:'restricted',
+            restrictedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, {merge:true});
           renderUsers();
-        }catch(e){ alert('Delete failed: '+(e.message||e)); }
+        }catch(e){ alert('Restrict failed: '+(e.message||e)); }
       };
     });
   }
   render('reports');
 }
+
 function downloadCloudReport(rec){
   // Reconstruct a portable draft file the app can also re-import.
   const payload={ type:'fdec_itm_draft', name:(rec.jobName||'report')+' — '+(rec.byName||''),
