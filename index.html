@@ -210,6 +210,15 @@ button{font-family:inherit}
 .ad-view:hover{background:var(--navy2,#16294a)}
 .ad-dl:hover{background:#eef2f8}
 .ad-del{border-color:var(--red);color:var(--red)}
+.ad-approve{border:1px solid #1a7f37;background:#1a7f37;color:#fff;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.ad-approve:hover{background:#166a2e}
+.ad-deny{border:1px solid var(--red);background:#fff;color:var(--red);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer}
+.ad-deny:hover{background:#fdecea}
+.st-pending{background:#fff4e5;color:#9a5b00;font-size:11px;font-weight:700;padding:2px 9px;border-radius:9px}
+.st-approved{background:#e9f6ec;color:#1a7f37;font-size:11px;font-weight:700;padding:2px 9px;border-radius:9px}
+.st-denied{background:#fdecea;color:var(--red);font-size:11px;font-weight:700;padding:2px 9px;border-radius:9px}
+.ad-pending-note{background:#fff4e5;color:#9a5b00;font-size:12.5px;font-weight:600;padding:8px 12px;border-radius:8px;margin-bottom:10px}
+#pendingBox{text-align:center;max-width:380px;margin:0 auto;padding:10px}
 .ad-del:hover{background:#fdecea}
 .cloud-flash{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(10px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;box-shadow:0 3px 12px rgba(0,0,0,.25);opacity:0;visibility:hidden;transition:opacity .25s,transform .25s,visibility .25s;z-index:80}
 .cloud-flash.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
@@ -381,13 +390,13 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:18px}
   /* preserve colors (shaded headers, striped rows, green/pink compliance) */
   *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 
-  /* Keep each section whole on one page; only break BETWEEN sections. */
-  .section{ break-inside:avoid; margin-top:6px; }
+  /* Fill pages tightly: let sections flow across page breaks instead of
+     jumping whole (which left large mid-report gaps). Rows still never split
+     mid-line, and headings never get stranded at a page bottom. */
+  .section{ break-inside:auto; margin-top:6px; }
   .sec-title{ break-after:avoid; }             /* never strand a heading at page bottom */
 
-  /* Sections taller than a full page must still flow, but without ugly splits:
-     items never split mid-row, and sub-readings stay with their header. */
-  .section.tall{ break-inside:auto; }
+  /* Keep the atomic pieces from splitting mid-row. */
   .item, .gridform .grow, .compliance, .defrow, .lp-row,
   .form-head, .hgrid, .hgrid2, .fdc-header, .variant-toggle{ break-inside:avoid; }
   .item.subitem{ break-before:avoid; }
@@ -1237,13 +1246,14 @@ if(_regBtn) _regBtn.onclick=async ()=>{
   _regBtn.disabled=true; _regBtn.textContent='Creating…';
   try{
     const cred=await FB_AUTH.createUserWithEmailAndPassword(email, p);
-    // create a profile record in Firestore
+    // create a profile record in Firestore, pending admin approval
     await FB_DB.collection('users').doc(cred.user.uid).set({
       name, email:email.toLowerCase(),
+      status: 'pending',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       lastLogin: firebase.firestore.FieldValue.serverTimestamp()
     });
-    // onAuthStateChanged will take over from here
+    // onAuthStateChanged will take over — pending users get the waiting screen
   }catch(e){ err.textContent=fbErr(e); }
   _regBtn.disabled=false; _regBtn.textContent='Create Account';
 };
@@ -1283,12 +1293,22 @@ async function enterApp(fbUser){
   CURRENT_USER = (fbUser.email||'').toLowerCase();
   IS_ADMIN = isAdminUser();
   ADMIN_UNLOCKED = false;
-  // display name: prefer Firestore profile, fall back to email
+  // display name + approval status from the Firestore profile
   let disp = fbUser.displayName || (fbUser.email||'').split('@')[0];
+  let status = 'approved';   // default: users with no status field (existing accounts) are approved
   try{
     const doc=await FB_DB.collection('users').doc(fbUser.uid).get();
-    if(doc.exists && doc.data().name) disp=doc.data().name;
+    if(doc.exists){
+      const d=doc.data();
+      if(d.name) disp=d.name;
+      if(d.status) status=d.status;
+    }
   }catch(e){}
+  // Admins always get in. Everyone else must be approved.
+  if(!IS_ADMIN && status!=='approved'){
+    showPendingScreen(disp, status);
+    return;
+  }
   document.getElementById('whoami').innerHTML = esc(disp) + (IS_ADMIN?' <span class="badge">ADMIN</span>':'');
   const lo=document.getElementById('logoutBtn'); if(lo) lo.style.display='';
   document.getElementById('adminToggle').style.display='none';   // locking not used
@@ -1303,6 +1323,31 @@ async function enterApp(fbUser){
   renderForm(ACTIVE_FORM);
   startAutosave();
   maybeOfferRecovery();
+}
+
+/* Waiting-for-approval (or denied) screen — blocks app access. */
+function showPendingScreen(name, status){
+  appScreen.classList.add('hidden');
+  authScreen.classList.remove('hidden');
+  document.getElementById('loginBox').classList.add('hidden');
+  document.getElementById('registerBox').classList.add('hidden');
+  let box=document.getElementById('pendingBox');
+  if(!box){
+    box=document.createElement('div'); box.id='pendingBox';
+    document.querySelector('#authScreen .auth-card, #authScreen').appendChild(box);
+  }
+  box.classList.remove('hidden');
+  const denied = (status==='denied');
+  box.innerHTML = denied
+    ? `<h2 style="color:#c00;margin:0 0 8px">Access Denied</h2>
+       <p style="font-size:14px;color:#444;line-height:1.5">Your account request was not approved. Please contact your administrator if you believe this is a mistake.</p>
+       <button class="btn" id="pendLogout" style="margin-top:12px">Back to sign in</button>`
+    : `<h2 style="color:var(--navy);margin:0 0 8px">Waiting for Approval</h2>
+       <p style="font-size:14px;color:#444;line-height:1.5">Thanks, ${esc(name||'')}. Your account has been created and is <b>pending administrator approval</b>. You'll be able to sign in and use the app once an admin approves your access.</p>
+       <button class="btn" id="pendRefresh" style="margin-top:12px">I've been approved — check again</button>
+       <button class="btn" id="pendLogout" style="margin-top:8px;background:#fff;color:var(--navy);border:1px solid var(--navy)">Sign out</button>`;
+  const lo=box.querySelector('#pendLogout'); if(lo) lo.onclick=()=>{ if(FB_AUTH) FB_AUTH.signOut(); location.reload(); };
+  const rf=box.querySelector('#pendRefresh'); if(rf) rf.onclick=()=>{ location.reload(); };
 }
 
 /* On startup, if a crash-recovery snapshot exists with real content, offer to restore it. */
@@ -2917,20 +2962,52 @@ async function adminDashboard(){
   async function renderUsers(){
     const snap=await FB_DB.collection('users').orderBy('email').get();
     if(snap.empty){ body.innerHTML='<div style="padding:16px;color:#777">No users registered yet.</div>'; return; }
-    let html='<table class="ad-table"><thead><tr><th>Name</th><th>Email</th><th>Last login</th><th></th></tr></thead><tbody>';
     const rows=[]; snap.forEach(d=>rows.push({id:d.id, ...d.data()}));
+    // pending users first, then the rest
+    const statusOf=(u)=> (u.status||'approved');
+    rows.sort((a,b)=>{
+      const pa=statusOf(a)==='pending'?0:1, pb=statusOf(b)==='pending'?0:1;
+      if(pa!==pb) return pa-pb;
+      return (a.email||'').localeCompare(b.email||'');
+    });
+    const pendingCount=rows.filter(u=>statusOf(u)==='pending').length;
+    let html='';
+    if(pendingCount){ html+=`<div class="ad-pending-note">${pendingCount} account${pendingCount===1?'':'s'} awaiting approval</div>`; }
+    html+='<table class="ad-table"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Last login</th><th></th></tr></thead><tbody>';
     rows.forEach(u=>{
       const last=u.lastLogin&&u.lastLogin.toDate?u.lastLogin.toDate().toLocaleString():'—';
       const isAdm=ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((u.email||'').toLowerCase());
+      const st=statusOf(u);
+      let statusBadge, actions;
+      if(isAdm){ statusBadge='<span class="st-approved">Admin</span>'; actions=''; }
+      else if(st==='pending'){
+        statusBadge='<span class="st-pending">Pending</span>';
+        actions=`<button class="ad-approve" data-id="${esc(u.id)}">Approve</button> <button class="ad-deny" data-id="${esc(u.id)}">Deny</button>`;
+      } else if(st==='denied'){
+        statusBadge='<span class="st-denied">Denied</span>';
+        actions=`<button class="ad-approve" data-id="${esc(u.id)}">Approve</button> <button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Delete</button>`;
+      } else {
+        statusBadge='<span class="st-approved">Approved</span>';
+        actions=`<button class="ad-deny" data-id="${esc(u.id)}">Revoke</button> <button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Delete</button>`;
+      }
       html+=`<tr>
-        <td>${esc(u.name||'—')}${isAdm?' <span class="badge">ADMIN</span>':''}</td>
+        <td>${esc(u.name||'—')}</td>
         <td>${esc(u.email||'—')}</td>
+        <td>${statusBadge}</td>
         <td>${esc(last)}</td>
-        <td>${isAdm?'':`<button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Delete</button>`}</td>
+        <td style="white-space:nowrap">${actions}</td>
       </tr>`;
     });
     html+='</tbody></table>';
     body.innerHTML=html;
+    async function setStatus(id, status){
+      try{ await FB_DB.collection('users').doc(id).set({status}, {merge:true}); renderUsers(); }
+      catch(e){ alert('Update failed: '+(e.message||e)); }
+    }
+    body.querySelectorAll('.ad-approve').forEach(btn=> btn.onclick=()=>setStatus(btn.getAttribute('data-id'),'approved'));
+    body.querySelectorAll('.ad-deny').forEach(btn=> btn.onclick=()=>{
+      if(confirm('Deny/revoke this user\u2019s access? They will not be able to use the app until approved.')) setStatus(btn.getAttribute('data-id'),'denied');
+    });
     body.querySelectorAll('.ad-del').forEach(btn=>{
       btn.onclick=async ()=>{
         const email=btn.getAttribute('data-email');
