@@ -1429,10 +1429,10 @@ function showPendingScreen(name, status){
   const denied = (status==='denied');
   const restricted = (status==='restricted');
   box.innerHTML = (denied || restricted)
-    ? `<h2 style="color:#c00;margin:0 0 8px">Access ${restricted?'Restricted':'Denied'}</h2>
+    ? `<h2 style="color:#c00;margin:0 0 8px">Access ${restricted?'Archived':'Suspended'}</h2>
        <p style="font-size:14px;color:#444;line-height:1.5">${restricted
-          ? 'Your account access has been restricted by an administrator. Please contact your administrator to restore access.'
-          : 'Your account request was not approved. Please contact your administrator if you believe this is a mistake.'}</p>
+          ? 'Your account has been archived by an administrator. Please contact your administrator to reactivate access.'
+          : 'Your access is not currently active. Please contact your administrator if you believe this is a mistake.'}</p>
        <button class="btn" id="pendLogout" style="margin-top:12px">Back to sign in</button>`
     : `<h2 style="color:var(--navy);margin:0 0 8px">Waiting for Approval</h2>
        <p style="font-size:14px;color:#444;line-height:1.5">Thanks, ${esc(name||'')}. Your account has been created and is <b>pending administrator approval</b>. You'll be able to sign in and use the app once an admin approves your access.</p>
@@ -3145,11 +3145,11 @@ async function adminDashboard(){
         statusBadge='<span class="st-pending">Pending</span>';
         actions=`<button class="ad-approve" data-id="${esc(u.id)}">Approve</button> <button class="ad-deny" data-id="${esc(u.id)}">Deny</button>`;
       } else if(st==='denied'){
-        statusBadge='<span class="st-denied">Denied</span>';
-        actions=`<button class="ad-approve" data-id="${esc(u.id)}">Approve</button> <button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Restrict</button>`;
+        statusBadge='<span class="st-denied">Suspended</span>';
+        actions=`<button class="ad-approve" data-id="${esc(u.id)}">Approve</button> <button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Archive</button>`;
       } else {
         statusBadge='<span class="st-approved">Approved</span>';
-        actions=`<button class="ad-deny" data-id="${esc(u.id)}">Revoke</button> <button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Restrict</button>`;
+        actions=`<button class="ad-deny" data-id="${esc(u.id)}">Suspend</button> <button class="ad-del" data-id="${esc(u.id)}" data-email="${esc(u.email||'')}">Archive</button>`;
       }
       html+=`<tr>
         <td>${esc(u.name||'—')}</td>
@@ -3186,12 +3186,12 @@ async function adminDashboard(){
     }
     body.querySelectorAll('.ad-approve').forEach(btn=> btn.onclick=()=>setStatus(btn.getAttribute('data-id'),'approved'));
     body.querySelectorAll('.ad-deny').forEach(btn=> btn.onclick=()=>{
-      if(confirm('Deny/revoke this user\u2019s access? They will not be able to use the app until approved.')) setStatus(btn.getAttribute('data-id'),'denied');
+      if(confirm('Suspend this user\u2019s access?\n\nThis temporarily blocks them (they stay in the active list). They can be re-approved anytime.')) setStatus(btn.getAttribute('data-id'),'denied');
     });
     body.querySelectorAll('.ad-del').forEach(btn=>{
       btn.onclick=async ()=>{
         const email=btn.getAttribute('data-email');
-        if(!confirm('Restrict '+email+'?\n\nThis blocks their access and moves them to the Archived list. Their submitted reports stay on file, and you can reactivate them later.')) return;
+        if(!confirm('Archive '+email+'?\n\nThis blocks their access and moves them to the Archived list (use this when someone is no longer active). Their submitted reports stay on file, and you can reactivate them later.')) return;
         try{
           await FB_DB.collection('users').doc(btn.getAttribute('data-id')).set({
             status:'restricted',
