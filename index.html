@@ -315,7 +315,7 @@ textarea.fin{border:1px solid var(--line);border-radius:5px;width:100%;min-heigh
 .deficiency{border:1px solid var(--line);border-top:none;padding:8px 10px}
 .deficiency .dhead{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px}
 .defrow{display:grid;grid-template-columns:1fr 150px;gap:8px;margin-bottom:6px}
-.defrow.defrow-pick{grid-template-columns:70px 1fr 150px}
+.defrow.defrow-pick{grid-template-columns:70px 1fr 150px auto;align-items:center}
 .defpick{border:1px solid var(--line);border-radius:5px;padding:5px 4px;font-size:12px;background:#f5f8fd;color:var(--navy);font-weight:600;max-width:70px}
 .defpick:focus{outline:none;border-color:var(--navy)}
 .defpick-print{display:none}
@@ -325,6 +325,9 @@ textarea.fin{border:1px solid var(--line);border-radius:5px;width:100%;min-heigh
 .defphoto-btn{border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 7px;font-size:14px;cursor:pointer;line-height:1}
 .defphoto-btn:hover{border-color:var(--navy)}
 .defphoto-btn.has{border-color:#1a7f37;background:#e9f6ec}
+.photo-src-menu{position:absolute;z-index:90;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.2);padding:6px;min-width:190px}
+.photo-src-menu button{display:block;width:100%;text-align:left;background:#fff;border:none;padding:11px 12px;border-radius:7px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer}
+.photo-src-menu button:hover{background:var(--shade)}
 .defphoto-thumbs{display:inline-flex;gap:3px;flex-wrap:wrap}
 .defphoto-thumb{position:relative;display:inline-block}
 .defphoto-thumb img{width:26px;height:26px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
@@ -332,20 +335,15 @@ textarea.fin{border:1px solid var(--line);border-radius:5px;width:100%;min-heigh
 .summary-photos{display:flex;flex-wrap:wrap;gap:12px;padding:10px 8px 4px;background:#fafbfd;border-bottom:1px solid var(--line2)}
 .sphoto-card{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff;max-width:340px}
 .sphoto-img{width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0}
-.sphoto-descwrap{display:flex;flex-direction:column;gap:3px;min-width:140px}
-.sphoto-lab{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.3px}
-.sphoto-desc{border:1px solid var(--line);border-radius:5px;padding:5px 7px;font-size:12px;font-family:inherit;width:100%;box-sizing:border-box}
-.sphoto-desc:focus{outline:none;border-color:var(--navy);background:#fffde9}
-.sphoto-desc.missing{border-color:var(--red);background:#fdf1f0}
+.sphoto-descwrap{display:flex;flex-direction:column;gap:3px;min-width:140px;justify-content:center}
+.sphoto-desctext{font-size:12.5px;color:var(--ink);line-height:1.4}
 @media print{
   .defphoto-wrap{display:none!important}
-  .sphoto-desc{border:none;padding:2px 0;background:transparent;font-size:11px}
-  .sphoto-desc.missing{background:transparent}
   .summary-photos{background:transparent;break-inside:avoid}
   .sphoto-img{cursor:default}
   .sphoto-card{break-inside:avoid}
 }
-@media(max-width:640px){ .defrow.defrow-pick{grid-template-columns:56px 1fr;gap:6px} .defrow.defrow-pick select:last-child{grid-column:1/-1} }
+@media(max-width:640px){ .defrow.defrow-pick{grid-template-columns:56px 1fr auto;gap:6px} .defrow.defrow-pick .fin.grow{grid-column:1/-1} }
 .defrow select{border:1px solid var(--line);border-radius:5px;padding:5px;font-size:12px}
 .defadd{background:#fff;border:1px dashed var(--line);color:var(--navy);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
 
@@ -598,6 +596,26 @@ try{
 }catch(e){ console.error('Firebase init failed', e); }
 function isAdminUser(){ return FB_AUTH && FB_AUTH.currentUser && ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((FB_AUTH.currentUser.email||'').toLowerCase()); }
 
+/* Small popup near the camera button: Take Photo vs Choose from Library (mobile). */
+function photoSourceMenu(anchor, onCamera, onLibrary){
+  // close any existing
+  const ex=document.getElementById('photoSrcMenu'); if(ex) ex.remove();
+  const menu=document.createElement('div'); menu.id='photoSrcMenu'; menu.className='photo-src-menu';
+  menu.innerHTML='<button type="button" data-a="cam">📷 Take Photo</button><button type="button" data-a="lib">🖼️ Choose from Library</button>';
+  document.body.appendChild(menu);
+  const rect=anchor.getBoundingClientRect();
+  menu.style.top=(window.scrollY+rect.bottom+6)+'px';
+  // keep it on-screen horizontally
+  let left=window.scrollX+rect.left;
+  const mw=200; if(left+mw>window.scrollX+window.innerWidth-8) left=window.scrollX+window.innerWidth-mw-8;
+  menu.style.left=Math.max(8,left)+'px';
+  const close=()=>{ if(menu.parentNode) menu.remove(); document.removeEventListener('click', onDoc, true); };
+  const onDoc=(e)=>{ if(!menu.contains(e.target) && e.target!==anchor) close(); };
+  setTimeout(()=>document.addEventListener('click', onDoc, true),0);
+  menu.querySelector('[data-a="cam"]').onclick=()=>{ close(); onCamera(); };
+  menu.querySelector('[data-a="lib"]').onclick=()=>{ close(); onLibrary(); };
+}
+
 /* Click a summary thumbnail to view it larger. */
 function openPhotoViewer(src){
   const mh=document.getElementById('modalHost')||document.body;
@@ -614,11 +632,15 @@ function openPhotoViewer(src){
 function compressImage(file, maxDim, quality){
   maxDim = maxDim||1000; quality = quality||0.55;
   return new Promise((resolve,reject)=>{
-    if(!file.type || file.type.indexOf('image/')!==0){ reject(new Error('Not an image')); return; }
+    // Don't hard-reject on reported MIME type — some phone photos (e.g. iPhone HEIC)
+    // report an empty or unusual type. Instead, try to load it; if the browser can
+    // render it, it's an image. Only genuine failures are rejected.
+    const nameLc=(file.name||'').toLowerCase();
     const img=new Image();
     const url=URL.createObjectURL(file);
     img.onload=()=>{
       let w=img.naturalWidth, h=img.naturalHeight;
+      if(!w || !h){ URL.revokeObjectURL(url); reject(new Error('Could not read image')); return; }
       if(w>h && w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; }
       else if(h>=w && h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; }
       const c=document.createElement('canvas'); c.width=w; c.height=h;
@@ -629,7 +651,12 @@ function compressImage(file, maxDim, quality){
       if(dataUrl.length>700000){ dataUrl=c.toDataURL('image/jpeg', 0.4); }
       resolve(dataUrl);
     };
-    img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('Could not read image')); };
+    img.onerror=()=>{ URL.revokeObjectURL(url);
+      const heic=/\.(heic|heif)$/i.test(file.name||'');
+      reject(new Error(heic
+        ? 'This looks like an iPhone HEIC photo this browser can\u2019t read. In your iPhone Settings \u2192 Camera \u2192 Formats, choose \u201cMost Compatible\u201d, or take the photo again with the app\u2019s camera.'
+        : 'Could not read this image file. Try a different photo or format (JPG/PNG).'));
+    };
     img.src=url;
   });
 }
@@ -1742,13 +1769,9 @@ function validateDeficiencyTypes(){
           if(comment && !type){
             problems.push({ form:shortName(f), section:sec.name, comment, kind:'type' });
           }
-          // Attached photos require a description each.
-          if(Array.isArray(r.photos)){
-            r.photos.forEach((ph,pi)=>{
-              if(ph && !String(ph.desc||'').trim()){
-                problems.push({ form:shortName(f), section:sec.name, comment:'Photo '+(pi+1)+' needs a description (add it on the Summary page)', kind:'photo_desc' });
-              }
-            });
+          // A photo needs a description — which now comes from the comment text.
+          if(Array.isArray(r.photos) && r.photos.length && !comment){
+            problems.push({ form:shortName(f), section:sec.name, comment:'Photo attached but no comment/description entered for it', kind:'photo_desc' });
           }
         });
       }
@@ -2123,8 +2146,19 @@ function deficiencyBlock(sec){
       const photoWrap=document.createElement('span'); photoWrap.className='defphoto-wrap';
       const attachBtn=document.createElement('button'); attachBtn.type='button'; attachBtn.className='defphoto-btn';
       attachBtn.title='Attach photo'; attachBtn.innerHTML='📷';
-      const fileIn=document.createElement('input'); fileIn.type='file'; fileIn.accept='image/*'; fileIn.style.display='none'; fileIn.multiple=true;
-      attachBtn.onclick=()=>fileIn.click();
+      // Two inputs: one opens the camera directly (mobile), one opens the library/files.
+      const camIn=document.createElement('input'); camIn.type='file'; camIn.accept='image/*'; camIn.setAttribute('capture','environment'); camIn.style.display='none';
+      const libIn=document.createElement('input'); libIn.type='file'; libIn.accept='image/*,.heic,.heif,.jpg,.jpeg,.png'; libIn.style.display='none'; libIn.multiple=true;
+      const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');
+      attachBtn.onclick=(ev)=>{
+        if(isMobile){
+          ev.stopPropagation();
+          photoSourceMenu(attachBtn, ()=>camIn.click(), ()=>libIn.click());
+        } else {
+          libIn.click();   // desktop: straight to file picker
+        }
+      };
+      const fileIn=libIn;   // library input drives the shared onchange below
       const thumbs=document.createElement('span'); thumbs.className='defphoto-thumbs';
       const redrawThumbs=()=>{
         thumbs.innerHTML='';
@@ -2139,16 +2173,18 @@ function deficiencyBlock(sec){
         });
         attachBtn.classList.toggle('has', r.photos.length>0);
       };
-      fileIn.onchange=async ()=>{
-        const files=[...fileIn.files]; fileIn.value='';
+      const handleFiles=async (inputEl)=>{
+        const files=[...inputEl.files]; inputEl.value='';
         for(const f of files){
           try{ const data=await compressImage(f); r.photos.push({data, desc:''}); }
           catch(e){ alert('Could not add image: '+(e.message||e)); }
         }
         setVal(sec.deficiency,arr); redrawThumbs(); flash();
       };
+      libIn.onchange=()=>handleFiles(libIn);
+      camIn.onchange=()=>handleFiles(camIn);
       redrawThumbs();
-      photoWrap.appendChild(attachBtn); photoWrap.appendChild(fileIn); photoWrap.appendChild(thumbs);
+      photoWrap.appendChild(attachBtn); photoWrap.appendChild(camIn); photoWrap.appendChild(libIn); photoWrap.appendChild(thumbs);
       row.appendChild(pick); row.appendChild(pnum); row.appendChild(ci); row.appendChild(sel); row.appendChild(photoWrap); rowsWrap.appendChild(row);
     });
   }
@@ -2561,7 +2597,7 @@ function buildSummaryPaper(){
       const td=document.createElement('div'); td.className='summary-type'; td.textContent=e.type||'—';
       r.appendChild(sd); r.appendChild(cd); r.appendChild(td);
       table.appendChild(r);
-      // attached photos for this entry, each with a required description
+      // attached photos for this entry — described by the deficiency comment text
       if(e.photos && e.photos.length){
         const prow=document.createElement('div'); prow.className='summary-photos';
         e.photos.forEach((ph,pi)=>{
@@ -2570,11 +2606,9 @@ function buildSummaryPaper(){
           im.onclick=()=>openPhotoViewer(ph.data);
           card.appendChild(im);
           const dwrap=document.createElement('div'); dwrap.className='sphoto-descwrap';
-          const dlab=document.createElement('label'); dlab.className='sphoto-lab'; dlab.textContent='Description (required):';
-          const din=document.createElement('input'); din.className='sphoto-desc'; din.value=ph.desc||''; din.placeholder='Describe this photo…';
-          if(!ph.desc) din.classList.add('missing');
-          din.oninput=()=>{ ph.desc=din.value; din.classList.toggle('missing', !din.value.trim()); flash(); };
-          dwrap.appendChild(dlab); dwrap.appendChild(din);
+          const dtxt=document.createElement('div'); dtxt.className='sphoto-desctext';
+          dtxt.textContent = (e.comment||'').trim() || '(no description — add a comment on the report)';
+          dwrap.appendChild(dtxt);
           card.appendChild(dwrap);
           prow.appendChild(card);
         });
