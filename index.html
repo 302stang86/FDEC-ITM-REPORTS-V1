@@ -336,11 +336,15 @@ textarea.fin{border:1px solid var(--line);border-radius:5px;width:100%;min-heigh
 .summary-photos{display:flex;flex-wrap:wrap;gap:12px;padding:10px 8px 4px;background:#fafbfd;border-bottom:1px solid var(--line2)}
 .sphoto-card{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff;max-width:340px}
 .sphoto-img{width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0}
-.sphoto-descwrap{display:flex;flex-direction:column;gap:3px;min-width:140px;justify-content:center}
-.sphoto-desctext{font-size:12.5px;color:var(--ink);line-height:1.4}
+.sphoto-descwrap{display:flex;flex-direction:column;gap:3px;min-width:150px;justify-content:center}
+.sphoto-lab{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.3px}
+.sphoto-desc{border:1px solid var(--line);border-radius:5px;padding:5px 7px;font-size:12.5px;font-family:inherit;line-height:1.4;color:var(--ink);resize:vertical;width:100%;box-sizing:border-box}
+.sphoto-desc:focus{outline:none;border-color:var(--navy);background:#fffde9}
 @media print{
   .defphoto-wrap{display:none!important}
   .summary-photos{background:transparent;break-inside:avoid}
+  .sphoto-desc{border:none;padding:2px 0;background:transparent;font-size:11px;resize:none}
+  .sphoto-lab{display:none}
   .sphoto-img{cursor:default}
   .sphoto-card{break-inside:avoid}
 }
@@ -742,7 +746,7 @@ const FD17 = {
     { name: "Additional NFPA Required Inspections", items: [
       {n:11, text:"Fire Alarm system Inspected within the past year.", type:"check_dates", dateId:"fd17_i11_date", byId:"fd17_i11_by"},
       {n:12, text:"Fire pump(s) inspected and tagged within the past year.", type:"check_dates", dateId:"fd17_i12_date", byId:"fd17_i12_by"},
-      {n:13, text:"5 Year internal pipe inspection.", type:"check_dates", dateId:"fd17_i13_date", byId:"fd17_i13_by"},
+      {n:13, text:"5 Year internal pipe inspection.", type:"dates_only", dateId:"fd17_i13_date", byId:"fd17_i13_by"},
       {n:14, text:"5 Year FDC piping hydrostatic testing", type:"check_dates", dateId:"fd17_i14_date", byId:"fd17_i14_by"},
       {n:15, text:"Standpipe system(s) inspected within the past year.", type:"check_dates", dateId:"fd17_i15_date", byId:"fd17_i15_by"},
       {n:16, text:"System Backflow device inspected within the past 3 years.", type:"check_dates", dateId:"fd17_i16_date", byId:"fd17_i16_by"}
@@ -995,7 +999,7 @@ const FD16 = {
     ], compliance:"c_7_10", deficiency:"d_7_10"},
     { name:"Additional NFPA Required Inspections", items:[
       {n:11, text:"Fire Alarm system Inspected within the past year.", type:"check_dates", dateId:"fd16_i11_date", byId:"fd16_i11_by"},
-      {n:12, text:"5 Year internal pipe inspection.", type:"check_dates", dateId:"fd16_i12_date", byId:"fd16_i12_by"},
+      {n:12, text:"5 Year internal pipe inspection.", type:"dates_only", dateId:"fd16_i12_date", byId:"fd16_i12_by"},
       {n:13, text:"5 Year FDC piping hydrostatic testing", type:"check_dates", dateId:"fd16_i13_date", byId:"fd16_i13_by"},
       {n:14, text:"System Backflow device inspected within the past 3 years.", type:"check_dates", dateId:"fd16_i14_date", byId:"fd16_i14_by"}
     ], compliance:"c_11_14", deficiency:"d_11_14"},
@@ -2139,7 +2143,7 @@ function deficiencyBlock(sec){
         if(pick.value==='__custom'){ r.n='__custom'; ci.focus(); setVal(sec.deficiency,arr); flash(); return; }
         if(pick.value===''){ r.n=undefined; setVal(sec.deficiency,arr); flash(); return; }
         const hit=pickItems.find(pi=>pi.n===pick.value);
-        if(hit){ r.n=hit.n; ci.focus(); setVal(sec.deficiency,arr); flash(); }
+        if(hit){ r.n=hit.n; setVal(sec.deficiency,arr); flash(); sortRows(); }
       };
       const sel=document.createElement('select'); DEF_TYPES.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t||'—';sel.appendChild(o);});
       sel.value=r.t||''; sel.onchange=()=>{ r.t=sel.value; setVal(sec.deficiency,arr); flash(); };
@@ -2189,6 +2193,21 @@ function deficiencyBlock(sec){
       photoWrap.appendChild(attachBtn); photoWrap.appendChild(camIn); photoWrap.appendChild(libIn); photoWrap.appendChild(thumbs);
       row.appendChild(pick); row.appendChild(pnum); row.appendChild(ci); row.appendChild(sel); row.appendChild(photoWrap); rowsWrap.appendChild(row);
     });
+  }
+  // Sort rows so selected item numbers appear in ascending numeric order.
+  // Custom and not-yet-numbered rows sink to the bottom (keeps the blank add-row last).
+  function sortRows(){
+    const rank=(r)=>{
+      const n=parseInt(r&&r.n,10);
+      return isNaN(n) ? Number.POSITIVE_INFINITY : n;
+    };
+    arr.sort((a,b)=>{
+      const ra=rank(a), rb=rank(b);
+      if(ra!==rb) return ra-rb;
+      return 0;  // stable-ish: keep original order for equal ranks
+    });
+    setVal(sec.deficiency,arr);
+    draw();
   }
   draw();
   d.appendChild(rowsWrap);
@@ -2320,6 +2339,13 @@ function renderItem(f,it){
       const na=document.createElement('span'); na.className='cbwrap'; na.appendChild(xbox(base+'_na'));
       const nal=document.createElement('span'); nal.className='lab'; nal.textContent='N/A'; na.appendChild(nal);
       ctrl.appendChild(na);
+      const dwrap=document.createElement('div'); dwrap.style.display='flex'; dwrap.style.flexDirection='column'; dwrap.style.gap='3px';
+      const d1=document.createElement('span'); d1.className='cbwrap'; d1.innerHTML='<span class="lab">Date:</span>'; d1.appendChild(inputEl(it.dateId,{placeholder:'—'}));
+      const d2=document.createElement('span'); d2.className='cbwrap'; d2.innerHTML='<span class="lab">By:</span>'; d2.appendChild(inputEl(it.byId,{placeholder:'—'}));
+      dwrap.appendChild(d1); dwrap.appendChild(d2); ctrl.appendChild(dwrap);
+      break;}
+    case 'dates_only':{
+      // Date + By fields, no N/A checkbox
       const dwrap=document.createElement('div'); dwrap.style.display='flex'; dwrap.style.flexDirection='column'; dwrap.style.gap='3px';
       const d1=document.createElement('span'); d1.className='cbwrap'; d1.innerHTML='<span class="lab">Date:</span>'; d1.appendChild(inputEl(it.dateId,{placeholder:'—'}));
       const d2=document.createElement('span'); d2.className='cbwrap'; d2.innerHTML='<span class="lab">By:</span>'; d2.appendChild(inputEl(it.byId,{placeholder:'—'}));
@@ -2585,7 +2611,8 @@ function buildSummaryPaper(){
   data.forEach(rep=>{
     const block=document.createElement('div'); block.className='summary-report';
     const rt=document.createElement('div'); rt.className='summary-rtitle';
-    rt.textContent=rep.title;
+    const repForm=FORMS.find(x=>x.id===rep.formId);
+    rt.textContent = repForm ? shortName(repForm) : rep.title;
     block.appendChild(rt);
 
     const table=document.createElement('div'); table.className='summary-table';
@@ -2599,7 +2626,7 @@ function buildSummaryPaper(){
       const td=document.createElement('div'); td.className='summary-type'; td.textContent=e.type||'—';
       r.appendChild(sd); r.appendChild(cd); r.appendChild(td);
       table.appendChild(r);
-      // attached photos for this entry — described by the deficiency comment text
+      // attached photos for this entry — editable description (defaults to the deficiency comment)
       if(e.photos && e.photos.length){
         const prow=document.createElement('div'); prow.className='summary-photos';
         e.photos.forEach((ph,pi)=>{
@@ -2608,9 +2635,14 @@ function buildSummaryPaper(){
           im.onclick=()=>openPhotoViewer(ph.data);
           card.appendChild(im);
           const dwrap=document.createElement('div'); dwrap.className='sphoto-descwrap';
-          const dtxt=document.createElement('div'); dtxt.className='sphoto-desctext';
-          dtxt.textContent = (e.comment||'').trim() || '(no description — add a comment on the report)';
-          dwrap.appendChild(dtxt);
+          const dlab=document.createElement('label'); dlab.className='sphoto-lab'; dlab.textContent='Photo description:';
+          const din=document.createElement('textarea'); din.className='sphoto-desc'; din.rows=2;
+          // default the photo's description to the deficiency comment the first time
+          if((ph.desc==null || ph.desc==='') && (e.comment||'').trim()){ ph.desc=(e.comment||'').trim(); }
+          din.value = ph.desc || '';
+          din.placeholder='Describe this photo…';
+          din.oninput=()=>{ ph.desc=din.value; flash(); };
+          dwrap.appendChild(dlab); dwrap.appendChild(din);
           card.appendChild(dwrap);
           prow.appendChild(card);
         });
