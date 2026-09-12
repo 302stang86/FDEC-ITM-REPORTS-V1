@@ -904,19 +904,18 @@ const FD20 = {
       {n:11, text:"Mechanical alarm devices tested and operated properly (water motor gong).", type:"risers"},
       {n:12, text:"Water pressure gauges are operable, show no signs of leaks, damage, missing components and water supply pressure is normal.", type:"check"},
       {n:13, text:"Air/nitrogen pressure gauges are operable, show no signs of leaks, damage, missing components and air/nitrogen pressure is normal.", type:"check"},
-      {n:14, text:"Low air alarm operated properly. (Dry System)", type:"check_psi", fid:"fd20_lowair"},
-      {n:15, text:"At time of report, Riser Room was above 40° F", type:"check"},
-      {n:16, text:"FDC visible, not damaged, swivels & clapper operate smoothly, gaskets & caps in-place, interior of connection inspected.", type:"check"}
-    ], compliance:"c_7_16", deficiency:"d_7_16"},
+      {n:14, text:"At time of report, Riser Room was above 40° F", type:"check"},
+      {n:15, text:"FDC visible, not damaged, swivels & clapper operate smoothly, gaskets & caps in-place, interior of connection inspected.", type:"check"}
+    ], compliance:"c_7_15", deficiency:"d_7_15"},
     { name:"Main Drain Testing", items:[
-      {n:17, text:"Adequate drainage for main drain testing", type:"check"},
-      {n:18, text:"Beginning Static Pressure (psi):", type:"numfield", fid:"fd20_static"},
-      {n:19, text:"Residual Pressure (psi):", type:"numfield", fid:"fd20_resid"},
-      {n:20, text:"Return Static Pressure (psi):", type:"numfield", fid:"fd20_return"},
-      {n:21, text:"Time to return to static Pressure (sec.):", type:"numfield", fid:"fd20_time"},
-      {n:22, text:"Last Recorded Residual Pressure (psi):", type:"numfield", fid:"fd20_lastresid"},
-      {n:23, text:"The Residual pressure is less than a 10% reduction from original or last test", type:"residual_calc_g", residId:"fd20_resid", lastId:"fd20_lastresid", outId:"fd20"}
-    ], compliance:"c_17_23", deficiency:"d_17_23"}
+      {n:16, text:"Adequate drainage for main drain testing", type:"check"},
+      {n:17, text:"Beginning Static Pressure (psi):", type:"numfield", fid:"fd20_static"},
+      {n:18, text:"Residual Pressure (psi):", type:"numfield", fid:"fd20_resid"},
+      {n:19, text:"Return Static Pressure (psi):", type:"numfield", fid:"fd20_return"},
+      {n:20, text:"Time to return to static Pressure (sec.):", type:"numfield", fid:"fd20_time"},
+      {n:21, text:"Last Recorded Residual Pressure (psi):", type:"numfield", fid:"fd20_lastresid"},
+      {n:22, text:"The Residual pressure is less than a 10% reduction from original or last test", type:"residual_calc_g", residId:"fd20_resid", lastId:"fd20_lastresid", outId:"fd20"}
+    ], compliance:"c_16_22", deficiency:"d_16_22"}
   ],
   passLabel:"The Riser(s) are free from Critical & Impaired Deficiencies:",
   disclaimer:[DISCLAIMER[0], DISCLAIMER[2], DISCLAIMER[3], DISCLAIMER[4], DISCLAIMER[6]]
@@ -949,21 +948,20 @@ const FD21 = {
       {n:10, text:"Water gong, retard chamber and associated system mechanical devices show no signs of leaks, damage/missing components.", type:"check"},
       {n:11, text:"Vane, paddle & pressure alarm devices tested & operated properly.", type:"risers"},
       {n:12, text:"Valve tamper switches tested and operated properly.", type:"check"},
-      {n:13, text:"Low air alarm operated properly. (Dry System)", type:"check_psi", fid:"fd21_lowair"},
-      {n:14, text:"At time of report, Riser Room was above 40° F", type:"check"},
-      {n:15, text:"Water pressure gauges are operable, show no signs of leaks, damage, missing components and water supply pressure is normal.", type:"check"},
-      {n:16, text:"Air/nitrogen pressure gauges are operable, show no signs of leaks, damage, missing components and air/nitrogen pressure is normal.", type:"check"},
-      {n:17, text:"FDC visible, not damaged, swivels & clapper operate smoothly, gaskets & caps in-place, interior of connection inspected.", type:"check"}
-    ], compliance:"c_7_17", deficiency:"d_7_17"},
+      {n:13, text:"At time of report, Riser Room was above 40° F", type:"check"},
+      {n:14, text:"Water pressure gauges are operable, show no signs of leaks, damage, missing components and water supply pressure is normal.", type:"check"},
+      {n:15, text:"Air/nitrogen pressure gauges are operable, show no signs of leaks, damage, missing components and air/nitrogen pressure is normal.", type:"check"},
+      {n:16, text:"FDC visible, not damaged, swivels & clapper operate smoothly, gaskets & caps in-place, interior of connection inspected.", type:"check"}
+    ], compliance:"c_7_16", deficiency:"d_7_16"},
     { name:"Main Drain Testing", items:[
-      {n:18, text:"Adequate drainage for main drain testing", type:"check"},
-      {n:19, text:"Beginning Static Pressure (psi):", type:"numfield", fid:"fd21_static"},
-      {n:20, text:"Residual Pressure (psi):", type:"numfield", fid:"fd21_resid"},
-      {n:21, text:"Return Static Pressure (psi):", type:"numfield", fid:"fd21_return"},
-      {n:22, text:"Time to return to static Pressure (sec.):", type:"numfield", fid:"fd21_time"},
-      {n:23, text:"Last Recorded Residual Pressure (psi):", type:"numfield", fid:"fd21_lastresid"},
-      {n:24, text:"The Residual pressure is less than a 10% reduction from original or last test", type:"residual_calc_g", residId:"fd21_resid", lastId:"fd21_lastresid", outId:"fd21"}
-    ], compliance:"c_18_24", deficiency:"d_18_24"}
+      {n:17, text:"Adequate drainage for main drain testing", type:"check"},
+      {n:18, text:"Beginning Static Pressure (psi):", type:"numfield", fid:"fd21_static"},
+      {n:19, text:"Residual Pressure (psi):", type:"numfield", fid:"fd21_resid"},
+      {n:20, text:"Return Static Pressure (psi):", type:"numfield", fid:"fd21_return"},
+      {n:21, text:"Time to return to static Pressure (sec.):", type:"numfield", fid:"fd21_time"},
+      {n:22, text:"Last Recorded Residual Pressure (psi):", type:"numfield", fid:"fd21_lastresid"},
+      {n:23, text:"The Residual pressure is less than a 10% reduction from original or last test", type:"residual_calc_g", residId:"fd21_resid", lastId:"fd21_lastresid", outId:"fd21"}
+    ], compliance:"c_17_23", deficiency:"d_17_23"}
   ],
   passLabel:"The Riser(s) are free from Critical & Impaired Deficiencies:",
   disclaimer:[DISCLAIMER[0], DISCLAIMER[2], DISCLAIMER[3], DISCLAIMER[4], DISCLAIMER[6]]
