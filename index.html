@@ -2552,6 +2552,11 @@ function collectSummary(){
           } else if(r.n==='__custom'){
             itemLabel = 'Custom';
           }
+          // For addon instances (e.g. "Dry Valve #2"), keep the instance name visible
+          // so the summary shows which specific valve/system the deficiency is on.
+          if(f.addon && sec.name && itemLabel!==sec.name){
+            itemLabel = sec.name + ' — ' + itemLabel;
+          }
           entries.push({section:sec.name, item:itemLabel, comment, type, photos:Array.isArray(r.photos)?r.photos:[], _ref:r});
         });
       }
