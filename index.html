@@ -2409,8 +2409,8 @@ function recalcResidual(f){
     out.textContent='—'; out.className='calcout'; return;
   }
   // % change = (Last Recorded − residual) / last recorded × 100
-  const pct=((resid-last)/last)*100;
-  const over=Math.abs(pct)>10;
+  const pct=((last-resid)/last)*100;
+  const over=Math.abs(pct)>=10;
   out.textContent=pct.toFixed(1)+'%';
   out.className='calcout'+(over?' over':' ok');
   out.title = over
