@@ -2315,7 +2315,7 @@ function renderItem(f,it){
       // "Compliant / except as listed" row and the deficiency list below.
       break;
     case 'residual_calc':{
-      // SS3: computed = (Residual − Last Recorded Residual) / Residual.
+      // SS3: computed = ((Last Recorded Residual − Residual) / Last Recorded Residual) * 100.
       // Fields: item 29 = Residual Pressure, item 32 = Last Recorded Residual.
       const out=document.createElement('span'); out.className='calcout'; out.id='calc_'+f.id+'_i33';
       ctrl.appendChild(out);
