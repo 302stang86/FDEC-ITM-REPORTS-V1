@@ -2391,10 +2391,15 @@ function renderItem(f,it){
   return row;
 }
 
-/* SS3: residual reduction calculation.
-   % reduction = (Residual − Last Recorded Residual) / Residual.
-   Item 29 = Residual Pressure (fd17_i29); item 32 = Last Recorded Residual (fd17_i32).
-   If reduction > 10%, show result in red (out of compliance). */
+/* SS3: Residual pressure reduction calculation.
+   % reduction = (Last Recorded Residual - Current Residual)
+                 / Last Recorded Residual × 100.
+   Item 29 = Current Residual Pressure (fd17_i29).
+   Item 32 = Last Recorded Residual Pressure (fd17_i32).
+   If the current residual pressure is less than 90% of the
+   last recorded residual pressure (>10% reduction), show
+   the result in red (out of compliance).
+*/
 function recalcResidual(f){
   const out=document.getElementById('calc_'+f.id+'_i33');
   if(!out) return;
