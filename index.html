@@ -319,7 +319,10 @@ textarea.fin{border:1px solid var(--line);border-radius:5px;width:100%;min-heigh
 .deficiency{border:1px solid var(--line);border-top:none;padding:8px 10px}
 .deficiency .dhead{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px}
 .defrow{display:grid;grid-template-columns:1fr 150px;gap:8px;margin-bottom:6px}
-.defrow.defrow-pick{grid-template-columns:70px 1fr 150px auto;align-items:center}
+.defrow.defrow-pick{grid-template-columns:70px 1fr 150px auto;align-items:start}
+.defcomment{resize:none;overflow:hidden;line-height:1.4;min-height:30px;padding:5px 4px;font-family:inherit;white-space:pre-wrap;word-break:break-word;
+  border:none!important;border-bottom:1.4px solid var(--navy)!important;border-radius:0!important;background:transparent!important;width:100%;box-sizing:border-box}
+.defcomment:focus{outline:none;background:#fffde9!important}
 .defpick{border:1px solid var(--line);border-radius:5px;padding:5px 4px;font-size:12px;background:#f5f8fd;color:var(--navy);font-weight:600;max-width:70px}
 .defpick:focus{outline:none;border-color:var(--navy)}
 .defpick-print{display:none}
@@ -2139,8 +2142,10 @@ function deficiencyBlock(sec){
       const pnum=document.createElement('span'); pnum.className='defpick-print';
       const setPnum=(v)=>{ pnum.textContent = (v && v!=='__custom' && v!=='') ? ('#'+v) : ''; };
       setPnum(pick.value);
-      const ci=document.createElement('input'); ci.className='fin grow'; ci.value=r.c||''; ci.placeholder='Comment / deficiency';
-      ci.oninput=()=>{ r.c=ci.value; setVal(sec.deficiency,arr); flash(); };
+      const ci=document.createElement('textarea'); ci.className='fin grow defcomment'; ci.rows=1; ci.value=r.c||''; ci.placeholder='Comment / deficiency';
+      const autoGrow=()=>{ ci.style.height='auto'; ci.style.height=Math.min(ci.scrollHeight, 200)+'px'; };
+      ci.oninput=()=>{ r.c=ci.value; autoGrow(); setVal(sec.deficiency,arr); flash(); };
+      setTimeout(autoGrow, 0);
       pick.onchange=()=>{
         setPnum(pick.value);
         if(pick.value==='__custom'){ r.n='__custom'; ci.focus(); setVal(sec.deficiency,arr); flash(); return; }
@@ -2315,7 +2320,7 @@ function renderItem(f,it){
       // "Compliant / except as listed" row and the deficiency list below.
       break;
     case 'residual_calc':{
-      // SS3: computed = ((Last Recorded Residual − Residual) / Last Recorded Residual) * 100.
+      // SS3: computed = (Residual − Last Recorded Residual) / Residual.
       // Fields: item 29 = Residual Pressure, item 32 = Last Recorded Residual.
       const out=document.createElement('span'); out.className='calcout'; out.id='calc_'+f.id+'_i33';
       ctrl.appendChild(out);
@@ -2391,15 +2396,10 @@ function renderItem(f,it){
   return row;
 }
 
-/* SS3: Residual pressure reduction calculation.
-   % reduction = (Last Recorded Residual - Current Residual)
-                 / Last Recorded Residual × 100.
-   Item 29 = Current Residual Pressure (fd17_i29).
-   Item 32 = Last Recorded Residual Pressure (fd17_i32).
-   If the current residual pressure is less than 90% of the
-   last recorded residual pressure (>10% reduction), show
-   the result in red (out of compliance).
-*/
+/* SS3: residual reduction calculation.
+   % reduction = (Residual − Last Recorded Residual) / Residual.
+   Item 29 = Residual Pressure (fd17_i29); item 32 = Last Recorded Residual (fd17_i32).
+   If reduction > 10%, show result in red (out of compliance). */
 function recalcResidual(f){
   const out=document.getElementById('calc_'+f.id+'_i33');
   if(!out) return;
