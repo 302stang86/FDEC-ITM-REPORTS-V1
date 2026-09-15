@@ -2320,7 +2320,7 @@ function renderItem(f,it){
       // "Compliant / except as listed" row and the deficiency list below.
       break;
     case 'residual_calc':{
-      // SS3: computed = (Residual − Last Recorded Residual) / Residual.
+      // SS3: computed = (Residual − Last Recorded Residual) / Last Recorded Residual.
       // Fields: item 29 = Residual Pressure, item 32 = Last Recorded Residual.
       const out=document.createElement('span'); out.className='calcout'; out.id='calc_'+f.id+'_i33';
       ctrl.appendChild(out);
@@ -2397,7 +2397,7 @@ function renderItem(f,it){
 }
 
 /* SS3: residual reduction calculation.
-   % reduction = (Residual − Last Recorded Residual) / Residual.
+   % reduction = (Residual − Last Recorded Residual) / Last Recorded Residual.
    Item 29 = Residual Pressure (fd17_i29); item 32 = Last Recorded Residual (fd17_i32).
    If reduction > 10%, show result in red (out of compliance). */
 function recalcResidual(f){
