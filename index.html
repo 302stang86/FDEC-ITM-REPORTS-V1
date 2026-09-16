@@ -2396,14 +2396,14 @@ function renderItem(f,it){
 
 /* Residual pressure reduction check (NFPA 25): compares the current test's
    Residual Pressure against the Last Recorded Residual Pressure.
-   pct = ((current − last) / last) × 100, so a drop shows as negative.
-   Fails (shown in red, numeric) only at −9.99% or further negative;
-   any result from 10% up through a positive reading shows a green "Pass". */
+   pct = ((last − current) / last) × 100, so a drop shows as positive.
+   Fails (shown in red, numeric) only at 10% or further positive;
+   any result from 9.99% through a negative reading shows a green "Pass". */
 function residualPct(residId, lastId){
   const resid=parseFloat(val(residId));
   const last=parseFloat(val(lastId));
   if(isNaN(resid)||isNaN(last)||last===0) return null;
-  return ((resid-last)/last)*100;
+  return ((last-resid)/last)*100;
 }
 function applyResidualOutput(out, pct){
   if(pct===null){ out.textContent='—'; out.className='calcout'; out.title=''; return; }
