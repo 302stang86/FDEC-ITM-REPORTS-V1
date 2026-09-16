@@ -1492,7 +1492,6 @@ function maybeOfferRecovery(){
   bg.querySelector('#recDiscard').onclick=()=>{ clearAutosave(); close(); };
 }
 
-function upX(){}  // placeholder removed marker
 function updateLockPill(){
   const pill=document.getElementById('lockPill');
   const btn=document.getElementById('adminToggle');
@@ -2320,8 +2319,7 @@ function renderItem(f,it){
       // "Compliant / except as listed" row and the deficiency list below.
       break;
     case 'residual_calc':{
-      // SS3: computed = (Last Recorded Residual − Residual) / Last Recorded Residual.
-      // Fields: item 29 = Residual Pressure, item 32 = Last Recorded Residual.
+      // Fields: item 29 = Residual Pressure (current test), item 32 = Last Recorded Residual.
       const out=document.createElement('span'); out.className='calcout'; out.id='calc_'+f.id+'_i33';
       ctrl.appendChild(out);
       recalcResidual(f); // set initial
@@ -2396,41 +2394,36 @@ function renderItem(f,it){
   return row;
 }
 
-/* SS3: residual reduction calculation.
-   % reduction = (Last Recorded Residual − Residual) / Last Recorded Residual.
-   Item 29 = Residual Pressure (fd17_i29); item 32 = Last Recorded Residual (fd17_i32).
-   If reduction >= 10%, show result in red (out of compliance). */
+/* Residual pressure reduction check (NFPA 25): compares the current test's
+   Residual Pressure against the Last Recorded Residual Pressure.
+   pct = ((current − last) / last) × 100, so a drop shows as negative.
+   Fails (shown in red, numeric) only at −10.00% or further negative;
+   any result from −9.99% up through a positive reading shows a green "Pass". */
+function residualPct(residId, lastId){
+  const resid=parseFloat(val(residId));
+  const last=parseFloat(val(lastId));
+  if(isNaN(resid)||isNaN(last)||last===0) return null;
+  return ((resid-last)/last)*100;
+}
+function applyResidualOutput(out, pct){
+  if(pct===null){ out.textContent='—'; out.className='calcout'; out.title=''; return; }
+  const fail = pct<=-10;
+  out.textContent = fail ? (pct.toFixed(2)+'%') : 'Pass';
+  out.className = 'calcout'+(fail?' over':' ok');
+  out.title = fail
+    ? '10% or greater reduction from last recorded residual — out of compliance'
+    : 'Less than a 10% reduction from last recorded residual — compliant';
+}
 function recalcResidual(f){
   const out=document.getElementById('calc_'+f.id+'_i33');
   if(!out) return;
-  const resid=parseFloat(val(f.id+'_i29'));
-  const last=parseFloat(val(f.id+'_i32'));
-  if(isNaN(resid)||isNaN(last)||last===0){
-    out.textContent='—'; out.className='calcout'; return;
-  }
-  // % change = (Last Recorded − residual) / last recorded × 100
-  const pct=((last-resid)/last)*100;
-  const over=Math.abs(pct)>=10;
-  out.textContent=pct.toFixed(1)+'%';
-  out.className='calcout'+(over?' over':' ok');
-  out.title = over
-    ? 'Greater than 10% reduction — out of compliance'
-    : 'Within 10% — compliant';
+  applyResidualOutput(out, residualPct(f.id+'_i29', f.id+'_i32'));
 }
-
 /* Generic residual calc for FD-16/20/21: reads explicit field ids. */
 function recalcResidualG(residId, lastId, outId){
   const out=document.getElementById('calc_'+outId);
   if(!out) return;
-  const resid=parseFloat(val(residId));
-  const last=parseFloat(val(lastId));
-  if(isNaN(resid)||isNaN(last)||last===0){ out.textContent='—'; out.className='calcout'; return; }
-  // % change = (last recorded − residual) / last recorded × 100
-  const pct=((resid-last)/last)*100;
-  const over=Math.abs(pct)>10;
-  out.textContent=pct.toFixed(1)+'%';
-  out.className='calcout'+(over?' over':' ok');
-  out.title=over?'Greater than 10% reduction — out of compliance':'Within 10% — compliant';
+  applyResidualOutput(out, residualPct(residId, lastId));
 }
 /* Recompute every generic residual output currently in the DOM. */
 function recalcAllG(){
@@ -2763,7 +2756,6 @@ function renderAddonItem(f,it,pre){
   const num=document.createElement('div'); num.className='num'; num.textContent=it.n; row.appendChild(num);
   const txt=document.createElement('div'); txt.className='txt'; txt.textContent=it.text; row.appendChild(txt);
   const ctrl=document.createElement('div'); ctrl.className='ctrl';
-  const fid=(id)=> (pre?pre:'')+ (id.startsWith(pre)?id.slice(pre.length):id); // safety; ids already include pre via build
   const base=(pre?pre:f.id)+'_i'+String(it.n).replace(/[^A-Za-z0-9]/g,'');
   switch(it.type){
     case 'check': break;  // no per-item box — compliance handled by section row (matches FD-17)
@@ -3349,7 +3341,6 @@ function manageUsersModal(){
 function passwordModal(title,msg,onOk,opts={}){
   const mh=document.getElementById('modalHost');
   const bg=document.createElement('div'); bg.className='modal-bg';
-  const isPass = /password/i.test(title)===false ? false : true;
   const typeAttr = (/unlock|password/i.test(title)) ? 'password' : 'text';
   bg.innerHTML=`<div class="modal">
     <h3>${esc(title)}</h3><p>${esc(msg)}</p>
