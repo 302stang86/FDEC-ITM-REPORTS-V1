@@ -2399,7 +2399,7 @@ function renderItem(f,it){
    pct = ((last − current) / last) × 100
    A pressure drop produces a positive percentage.
    A pressure increase produces a negative percentage.
-   PASS: pct < 10%
+   PASS: pct < 9.99%
          Includes 9.99% and all negative results.
    FAIL: pct >= 10%
          A 10% or greater reduction is a failure and is
@@ -2425,7 +2425,7 @@ function applyResidualOutput(out, pct){
   out.className = 'calcout'+(fail?' over':' ok');
   out.title = fail
     ? '10% or greater reduction from last recorded residual — out of compliance'
-    : 'Less than a 10% reduction from last recorded residual — compliant';
+    : 'Less than a 9.99% reduction from last recorded residual — compliant';
 }
 function recalcResidual(f){
   const out=document.getElementById('calc_'+f.id+'_i33');
@@ -2433,10 +2433,10 @@ function recalcResidual(f){
   applyResidualOutput(out, residualPct(f.id+'_i29', f.id+'_i32'));
 }
 /* Generic residual calc for FD-16/20/21: reads explicit field ids. */
-function recalcResidualG(residId, lastId, outId){
+function recalcResidualG(lastId, residId, outId){
   const out=document.getElementById('calc_'+outId);
   if(!out) return;
-  applyResidualOutput(out, residualPct(residId, lastId));
+  applyResidualOutput(out, residualPct(lastId, residId));
 }
 /* Recompute every generic residual output currently in the DOM. */
 function recalcAllG(){
