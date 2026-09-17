@@ -204,6 +204,11 @@ button{font-family:inherit}
 .ad-search{flex:1;min-width:160px;border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit}
 .ad-search:focus{outline:none;border-color:var(--navy)}
 .ad-count{font-size:11px;color:var(--muted);padding:8px 2px 2px}
+.dup-true{display:inline-block;font-size:10px;font-weight:700;background:#e9f6ec;color:#1a7f37;padding:1px 7px;border-radius:9px;margin-left:4px}
+.dup-dup{display:inline-block;font-size:10px;font-weight:700;background:#fdecea;color:var(--red);padding:1px 7px;border-radius:9px;margin-left:4px}
+.dup-row{background:#fdf5f4}
+.dup-row td{opacity:.85}
+.ad-dup-note{background:#fdecea;color:#9a2b20;font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:8px;margin-bottom:10px;border:1px solid #f3c6c0}
 .ad-tab{background:none;border:none;padding:8px 14px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent}
 .ad-tab.active{color:var(--navy);border-bottom-color:var(--navy)}
 .ad-table{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -3102,6 +3107,20 @@ async function adminDashboard(){
       r._names=(r.reports||[]).map(id=>{const f=FORMS.find(x=>x.id===id); return f?shortName(f):id;}).join(', ');
       r._search=[r.byName,r.byEmail,r.jobName,r.jobNumber,r._names].filter(Boolean).join(' ').toLowerCase();
     });
+    // Duplicate detection by job number. Reports are already newest-first, so the
+    // FIRST time we see a job number is the most recent = the "true" report; any
+    // later (older) ones with the same job number are flagged as possible duplicates.
+    const jobCounts={};
+    rows.forEach(r=>{ const jn=String(r.jobNumber||'').trim(); if(jn) jobCounts[jn]=(jobCounts[jn]||0)+1; });
+    const seenJob={};
+    rows.forEach(r=>{
+      const jn=String(r.jobNumber||'').trim();
+      r._dupSet = jn && jobCounts[jn]>1;   // part of a duplicate group
+      if(r._dupSet){
+        if(!seenJob[jn]){ r._dupRole='true'; seenJob[jn]=true; }   // newest = true
+        else { r._dupRole='dup'; }                                  // older = duplicate
+      } else { r._dupRole=''; }
+    });
     // available years, newest first; default to current year (or newest with data)
     const years=[...new Set(rows.map(r=>r._year))].sort((a,b)=>b-a);
     let selYear = years.includes(nowYear)?nowYear:years[0];
@@ -3128,12 +3147,20 @@ async function adminDashboard(){
         listEl.innerHTML='<div style="padding:16px;color:#777">No reports'+(q?' match your search':'')+' for '+y+'.</div>';
         return;
       }
-      let html='<table class="ad-table"><thead><tr><th>Submitted</th><th>Tech</th><th>Job</th><th>Reports</th><th></th></tr></thead><tbody>';
+      let html='';
+      const dupCount=filtered.filter(r=>r._dupRole==='dup').length;
+      if(dupCount>0){
+        html+='<div class="ad-dup-note">⚠ '+dupCount+' possible duplicate'+(dupCount===1?'':'s')+' — reports sharing a job number with a newer submission. The most recent (marked ✓ Current) is the true report.</div>';
+      }
+      html+='<table class="ad-table"><thead><tr><th>Submitted</th><th>Tech</th><th>Job</th><th>Reports</th><th></th></tr></thead><tbody>';
       filtered.forEach(r=>{
-        html+=`<tr>
+        let dupBadge='';
+        if(r._dupRole==='true') dupBadge=' <span class="dup-true" title="Most recent report for this job number">✓ Current</span>';
+        else if(r._dupRole==='dup') dupBadge=' <span class="dup-dup" title="A newer report exists with this same job number">⚠ Possible duplicate</span>';
+        html+=`<tr class="${r._dupRole==='dup'?'dup-row':''}">
           <td>${esc(r._when)}</td>
           <td>${esc(r.byName||r.byEmail||'—')}</td>
-          <td>${esc(r.jobName||'—')}${r.jobNumber?(' · '+esc(r.jobNumber)):''}</td>
+          <td>${esc(r.jobName||'—')}${r.jobNumber?(' · '+esc(r.jobNumber)):''}${dupBadge}</td>
           <td style="font-size:11px">${esc(r._names)}</td>
           <td style="white-space:nowrap"><button class="ad-view" data-id="${esc(r.id)}">View</button> <button class="ad-dl" data-id="${esc(r.id)}">Download</button> <button class="ad-del" data-id="${esc(r.id)}" data-label="${esc((r.jobName||'report')+' — '+(r.byName||r.byEmail||''))}">Delete</button></td>
         </tr>`;
