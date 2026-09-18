@@ -2406,19 +2406,20 @@ function renderItem(f,it){
 }
 
 /* SS3: residual reduction calculation.
-   % reduction = (Residual − Last Recorded Residual) / Residual.
+   % reduction = (Last Recorded Residual − Residual) / Last Recorded Residual.
    Item 29 = Residual Pressure (fd17_i29); item 32 = Last Recorded Residual (fd17_i32).
-   If reduction > 10%, show result in red (out of compliance). */
+   If reduction >= 10%, show result in red (out of compliance).
+   If reduction <= 9.99%, show result in green (out of compliance).*/
 function recalcResidual(f){
   const out=document.getElementById('calc_'+f.id+'_i33');
   if(!out) return;
   const resid=parseFloat(val(f.id+'_i29'));
   const last=parseFloat(val(f.id+'_i32'));
-  if(isNaN(resid)||isNaN(last)||last===0){
+  if(isNaN(last)||isNaN(resid)||last===0){
     out.textContent='—'; out.className='calcout'; return;
   }
-  // % change = (residual − last recorded) / last recorded × 100
-  const pct=((resid-last)/last)*100;
+  // % change = (last recorded − residual) / last recorded × 100
+  const pct=((last-resid)/last)*100;
   const over=Math.abs(pct)>10;
   out.textContent=pct.toFixed(1)+'%';
   out.className='calcout'+(over?' over':' ok');
