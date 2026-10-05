@@ -393,9 +393,9 @@ textarea.fin{border:1px solid var(--line);border-radius:5px;width:100%;min-heigh
 .disc p{font-size:10px;color:#555;line-height:1.4;margin:0 0 6px}
 
 .locknote{font-size:11px;color:var(--muted);font-style:italic;padding:6px 2px}
-.calcout{font-weight:800;font-size:15px;min-width:70px;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
-.calcout.ok{color:var(--ok)}
-.calcout.over{color:#e11900}
+.calcout{font-weight:800;font-size:15px;min-width:70px;text-align:right;font-variant-numeric:tabular-nums;color:#000}
+.calcout.ok{color:#000}
+.calcout.over{color:#000}
 .riser-btns{margin-left:4px}
 .riser-label{font-weight:700;color:var(--navy);min-width:64px;max-width:100px;border-bottom:1px dashed var(--navy)}
 .riser-label:focus{background:#fffde9;border-bottom-style:solid}
@@ -760,7 +760,7 @@ const FD17 = {
       {n:13, text:"5 Year internal pipe inspection.", type:"dates_only", dateId:"fd17_i13_date", byId:"fd17_i13_by"},
       {n:14, text:"5 Year FDC piping hydrostatic testing", type:"check_dates", dateId:"fd17_i14_date", byId:"fd17_i14_by"},
       {n:15, text:"Standpipe system(s) inspected within the past year.", type:"check_dates", dateId:"fd17_i15_date", byId:"fd17_i15_by"},
-      {n:16, text:"System Backflow device inspected within the past 3 years.", type:"check_dates", dateId:"fd17_i16_date", byId:"fd17_i16_by"}
+      {n:16, text:"System Backflow device tested within the past 3 years.", type:"check_dates", dateId:"fd17_i16_date", byId:"fd17_i16_by"}
     ], compliance:"c_11_16", deficiency:"d_11_16"},
 
     { name: "System Functionality", items: [
@@ -1013,7 +1013,7 @@ const FD16 = {
       {n:11, text:"Fire Alarm system Inspected within the past year.", type:"check_dates", dateId:"fd16_i11_date", byId:"fd16_i11_by"},
       {n:12, text:"5 Year internal pipe inspection.", type:"dates_only", dateId:"fd16_i12_date", byId:"fd16_i12_by"},
       {n:13, text:"5 Year FDC piping hydrostatic testing", type:"check_dates", dateId:"fd16_i13_date", byId:"fd16_i13_by"},
-      {n:14, text:"System Backflow device inspected within the past 3 years.", type:"check_dates", dateId:"fd16_i14_date", byId:"fd16_i14_by"}
+      {n:14, text:"System Backflow device tested within the past 3 years.", type:"check_dates", dateId:"fd16_i14_date", byId:"fd16_i14_by"}
     ], compliance:"c_11_14", deficiency:"d_11_14"},
     { name:"System Functionality", items:[
       {n:15, text:"Accessible Control valves and Sectional valves exercised and, if required, lubricated.", type:"check"},
