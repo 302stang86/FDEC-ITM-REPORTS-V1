@@ -2563,7 +2563,8 @@ function collectSummary(){
           const comment=String(r.c||'').trim();
           if(!comment && !type) return;
           // Exclude informational lines: 'Comment' and 'Recommendation' are not deficiencies.
-          if(type==='Comment' || type==='Recommendation') return;
+          // Also exclude 'Non-Critical' deficiencies from the summary page.
+          if(type==='Comment' || type==='Recommendation' || type==='Non-Critical') return;
           // Build the "N - item text" label from the selected dropdown number.
           let itemLabel=sec.name;
           if(r.n!=null && r.n!=='' && r.n!=='__custom'){
@@ -2591,7 +2592,7 @@ function collectSummary(){
         if(store[base+'_no']===true){
           const why=String(store[base+'_why']||'').trim();
           const type=String(store[base+'_deftype']||'').trim();
-          if(type==='Comment' || type==='Recommendation') return;
+          if(type==='Comment' || type==='Recommendation' || type==='Non-Critical') return;
           if(why || type){
             entries.push({section:'Item '+it.n, item:(it.n+' - '+it.text), comment:why||it.text, type});
           }
