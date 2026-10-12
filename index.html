@@ -136,7 +136,7 @@ button{font-family:inherit}
   border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin:12px 0 16px;background:var(--shade)}
 .summary-none{padding:30px;text-align:center;color:var(--ok);font-weight:600;font-size:14px;
   border:1px dashed var(--ok);border-radius:8px}
-.summary-report{margin-bottom:18px;break-inside:avoid}
+.summary-report{margin-bottom:18px}
 .summary-rtitle{background:var(--navy);color:#fff;font-weight:700;font-size:12.5px;padding:6px 12px;border-radius:4px 4px 0 0}
 .summary-table{border:1px solid var(--line);border-top:none}
 .summary-row{display:grid;grid-template-columns:1.3fr 3fr 1fr;border-bottom:1px solid var(--line2)}
@@ -358,6 +358,14 @@ textarea.fin{border:1px solid var(--line);border-radius:5px;width:100%;min-heigh
   .sphoto-lab{display:none}
   .sphoto-img{cursor:default}
   .sphoto-card{break-inside:avoid}
+  /* Let summary report blocks flow across pages instead of jumping whole,
+     which left a large blank gap. Keep rows intact, keep the title with
+     its header + first row, and never leave a lone row stranded. */
+  .summary-report{break-inside:auto}
+  .summary-rtitle{break-inside:avoid;break-after:avoid}
+  .summary-row{break-inside:avoid}
+  .summary-row.summary-th{break-after:avoid}
+  .summary-table{orphans:2;widows:2}
 }
 @media(max-width:640px){ .defrow.defrow-pick{grid-template-columns:56px 1fr auto;gap:6px} .defrow.defrow-pick .fin.grow{grid-column:1/-1} }
 .defrow select{border:1px solid var(--line);border-radius:5px;padding:5px;font-size:12px}
